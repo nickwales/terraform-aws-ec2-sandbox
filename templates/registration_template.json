@@ -1,0 +1,23 @@
+{
+  "Node": "deepsig",
+  "Address": "<ip_address>",
+  "NodeMeta": {
+    "external-node": "true",
+    "external-probe": "false"
+  },
+  "Service": {
+    "ID": "deepsig",
+    "Service": "deepsig",
+    "Port": 443
+  },
+  "Checks": [
+    {
+      "Name": "http-check",
+      "status": "passing",
+      "Definition": {
+        "http": "https://<port>/healthcheck",
+        "interval": "30s"
+      }
+    }
+  ]
+}
