@@ -141,7 +141,7 @@ wget https://github.com/nicholasjackson/fake-service/releases/download/v0.24.2/f
 unzip -d /opt/fake-service/ fake_service_linux_amd64.zip
 chmod +x /opt/fake-service/fake-service 
 
-cat <<EOT > /etc/systemd/system/legacy-service.service
+cat <<EOT > /etc/systemd/system/spectrum-guard.service
 [Unit]
 Description=Fake Service
 After=syslog.target network.target
@@ -157,11 +157,11 @@ Restart=always
 WantedBy=multi-user.target
 EOT
 
-cat <<EOT > /etc/consul.d/legacy-service.hcl
+cat <<EOT > /etc/consul.d/spectrum-guard.hcl
 service {
-  name = "legacy-service"
+  name = "spectrum-guard"
   port = 9090
-  tags = ["vm", "legacy"]
+  tags = ["vm", "spectrum-guard"]
 
   checks = [
     {
@@ -179,14 +179,14 @@ service {
 }
 EOT
 
-cat <<EOT > /etc/systemd/system/legacy-service-sidecar.service
+cat <<EOT > /etc/systemd/system/spectrum-guard-sidecar.service
 [Unit]
 Description=Consul Envoy
 After=syslog.target network.target
 
 [Service]
 Environment=CONSUL_HTTP_TOKEN=${CONSUL_HTTP_TOKEN}
-ExecStart=/usr/bin/consul connect envoy -sidecar-for legacy-service -admin-bind 127.0.0.1:19003
+ExecStart=/usr/bin/consul connect envoy -sidecar-for spectrum-guard -admin-bind 127.0.0.1:19003
 ExecStop=/bin/sleep 5
 Restart=always
 
@@ -196,8 +196,8 @@ EOT
 
 consul reload
 systemctl daemon-reload
-systemctl enable legacy-service --now
-systemctl enable legacy-service-sidecar --now
+systemctl enable spectrum-guard --now
+systemctl enable spectrum-guard-sidecar --now
 
 
 cat <<EOT > /root/exported-services.hcl
@@ -205,7 +205,7 @@ Kind = "exported-services"
 Name = "default"
 Services = [
   {
-    Name = "legacy-service"
+    Name = "spectrum-guard"
     Consumers = [
       {
         Peer = "dc1"
@@ -223,7 +223,7 @@ Name = "terminating-gateway"
 
 Services = [
   {
-    Name = "legacy-service"
+    Name = "spectrum-guard"
   }
 ]
 EOT
@@ -240,7 +240,7 @@ Listeners = [
     Protocol = "tcp"
     Services = [
       {
-        Name = "legacy-service"
+        Name = "spectrum-guard"
       }
     ]
   }
@@ -251,7 +251,7 @@ consul config write /root/ingress.hcl
 
 cat <<EOT > /root/intention.hcl
 Kind = "service-intentions"
-Name = "legacy-service"
+Name = "spectrum-guard"
 Sources = [
   {
     Name   = "ingress-gateway"

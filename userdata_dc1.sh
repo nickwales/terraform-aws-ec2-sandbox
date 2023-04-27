@@ -135,58 +135,52 @@ systemctl enable mesh-gateway --now
 
 
 
-## Get a fake service going
-mkdir /opt/fake-service
-wget https://github.com/nicholasjackson/fake-service/releases/download/v0.24.2/fake_service_linux_amd64.zip
-unzip -d /opt/fake-service/ fake_service_linux_amd64.zip
+# ## Get a fake service going
+# mkdir /opt/fake-service
+# wget https://github.com/nicholasjackson/fake-service/releases/download/v0.24.2/fake_service_linux_amd64.zip
+# unzip -d /opt/fake-service/ fake_service_linux_amd64.zip
 
-cat <<EOT >> /etc/systemd/system/legacy-service.service
-[Unit]
-Description=Fake Service
-After=syslog.target network.target
+# cat <<EOT >> /etc/systemd/system/spectrum-guard.service
+# [Unit]
+# Description=Fake Service
+# After=syslog.target network.target
 
-[Service]
-Environment=NAME="Legacy Service"
-Environment=MESSAGE="I'm running on a VM"
-ExecStart=/opt/fake-service/fake-service
-ExecStop=/bin/sleep 5
-Restart=always
+# [Service]
+# Environment=NAME="spectrum-guard"
+# Environment=MESSAGE="spectrum-guard.AI"
+# ExecStart=/opt/fake-service/fake-service
+# ExecStop=/bin/sleep 5
+# Restart=always
 
-[Install]
-WantedBy=multi-user.target
-EOT
+# [Install]
+# WantedBy=multi-user.target
+# EOT
 
-cat <<EOT >> /etc/consul.d/legacy-service.hcl
-service {
-  name = "legacy-service"
-  port = 9090
-  tags = ["vm", "legacy"]
+# cat <<EOT >> /etc/consul.d/spectrum-guard.hcl
+# service {
+#   name = "spectrum-guard"
+#   port = 9090
+#   tags = ["vm", "legacy"]
 
-  checks = [
-    {
-      name = "HTTP API on port 5000"
-      http = "http://127.0.0.1:9090/health"
-      interval = "10s"
-      timeout = "5s"
-    }
-  ]
+#   checks = [
+#     {
+#       name = "HTTP API on port 5000"
+#       http = "http://127.0.0.1:9090/health"
+#       interval = "10s"
+#       timeout = "5s"
+#     }
+#   ]
 
-  connect = {
-    sidecar_service = {}
-  }
-  token = "$${ACL_TOKEN}"
-}
-
-cat <<EOT > /root/ingress.hcl
-
-EOT
-
-consul config write /root/ingress.hcl
+#   connect = {
+#     sidecar_service = {}
+#   }
+#   token = "$${ACL_TOKEN}"
+# }
 
 
 cat <<EOT > /root/legacy-resolver.hcl
 Kind           = "service-resolver"
-Name           = "legacy-service"
+Name           = "spectrum-guard"
 ConnectTimeout = "5s"
 Failover = {
   "*" = {
@@ -209,7 +203,7 @@ Listeners = [
     Protocol = "tcp"
     Services = [
       {
-        Name = "legacy-service"
+        Name = "spectrum-guard"
       }
     ]
   }
@@ -221,7 +215,7 @@ consul config write /root/ingress.hcl
 ## Allow the ingress to talk to the "legacy service"
 cat <<EOT > /root/intention.hcl
 Kind = "service-intentions"
-Name = "legacy-service"
+Name = "spectrum-guard"
 Sources = [
   {
     Name   = "ingress-gateway"
