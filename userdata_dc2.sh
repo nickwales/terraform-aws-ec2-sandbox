@@ -65,6 +65,7 @@ systemctl enable consul --now
 sleep 15
 
 export CONSUL_HTTP_TOKEN=root
+echo CONSUL_HTTP_TOKEN=root >> /etc/environment
 
 
 ## Enable peering through mesh gateways
@@ -120,7 +121,7 @@ After=syslog.target network.target
 
 [Service]
 Environment=CONSUL_HTTP_TOKEN=${CONSUL_HTTP_TOKEN}
-ExecStart=/usr/bin/consul connect envoy -gateway terminating -register -admin-bind 127.0.0.1:19002
+ExecStart=/usr/bin/consul connect envoy -gateway terminating -register -admin-bind 127.0.0.1:19002 -address ${INSTANCE_IP}:8444
 ExecStop=/bin/sleep 5
 Restart=always
 
@@ -172,9 +173,9 @@ service {
     }
   ]
 
-  connect = {
-    sidecar_service = {}
-  }
+  # connect = {
+  #   sidecar_service = {}
+  # }
   token = "${CONSUL_HTTP_TOKEN}"
 }
 EOT
@@ -197,7 +198,7 @@ EOT
 consul reload
 systemctl daemon-reload
 systemctl enable spectrum-guard --now
-systemctl enable spectrum-guard-sidecar --now
+#systemctl enable spectrum-guard-sidecar --now
 
 
 cat <<EOT > /root/exported-services.hcl

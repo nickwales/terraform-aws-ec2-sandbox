@@ -66,6 +66,7 @@ sleep 15
 
 
 export CONSUL_HTTP_TOKEN=root
+echo CONSUL_HTTP_TOKEN=root >> /etc/environment
 
 ## Enable peering through mesh gateways
 cat <<EOT > /root/mesh.hcl
@@ -120,7 +121,7 @@ After=syslog.target network.target
 
 [Service]
 Environment=CONSUL_HTTP_TOKEN=${CONSUL_HTTP_TOKEN}
-ExecStart=/usr/bin/consul connect envoy -gateway terminating -register -admin-bind 127.0.0.1:19002
+ExecStart=/usr/bin/consul connect envoy -gateway terminating -register -admin-bind 127.0.0.1:19002 -bind-address=default=0.0.0.0:8444  -address 172.31.1.17:8444
 ExecStop=/bin/sleep 5
 Restart=always
 
