@@ -19,9 +19,12 @@ curl https://func-e.io/install.sh | bash -s -- -b /usr/local/bin
 func-e use ${envoy_version}
 cp /root/.func-e/versions/${envoy_version}/bin/envoy /usr/local/bin
 
-wget https://github.com/envoyproxy/envoy/releases/download/v1.24.1/envoy-1.24.1-linux-x86_64
-mv envoy-1.24.1-linux-x86_64 /usr/local/bin/envoy
-chmod +x /usr/local/bin/envoy
+# Install fake-service
+mkdir -p /opt/fake-service
+wget https://github.com/nicholasjackson/fake-service/releases/download/v0.24.2/fake_service_linux_amd64.zip
+unzip -od /opt/fake-service/ fake_service_linux_amd64.zip
+rm -f fake_service_linux_amd64.zip
+chmod +x /opt/fake-service/fake-service
 
 # Configure Consul and start it up
 cat <<EOT > /etc/consul.d/consul.hcl
