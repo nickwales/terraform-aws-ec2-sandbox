@@ -17,14 +17,6 @@ EOT
 consul config write /root/downstream-intention.hcl
 
 ### Install Apps 
-## fake-service binary
-mkdir /opt/fake-service
-wget https://github.com/nicholasjackson/fake-service/releases/download/v0.24.2/fake_service_linux_amd64.zip
-unzip -d /opt/fake-service/ fake_service_linux_amd64.zip
-rm -f fake_service_linux_amd64.zip
-chmod +x /opt/fake-service/fake-service
-
-
 ## Upstream service 
 cat <<EOT > /etc/systemd/system/upstream.service
 [Unit]
