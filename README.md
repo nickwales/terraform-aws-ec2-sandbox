@@ -5,15 +5,16 @@ This is a deployment of a fully featured Consul cluster on a VM
 A single node server
 Ingress, Terminating and Mesh Gateways
 
-A test application.
+### How to deploy
 
-### How to use
+Run the terraform! The two ubuntu servers will be deployed as dc1 and dc2.
 
-Deploy two ubuntu servers
+They will now be in a state to be peered, using the UI is the preferred method here which is available on port 8500 on each server. (See outputs for public IP addresses)
 
-Run `userdata_dc1.sh` on one and `userdata_dc2.sh` on the other
+### Examples
 
-They will now be in a state to be peered, using the UI is the preferred method here which is available on port 8500 on each server.
+In the deploy directory is a range of different activities. These have scripts to be run on the datacenter appropriate instances. 
+
 
 ### Adding external services
 
