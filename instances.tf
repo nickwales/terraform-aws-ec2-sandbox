@@ -1,57 +1,67 @@
-resource "aws_instance" "dc1" {
+resource "aws_instance" "server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.small"
   
-  iam_instance_profile    = aws_iam_instance_profile.doormat_profile.name
+  iam_instance_profile    = aws_iam_instance_profile.instance.name
 
   tags = {
     Terraform = "true"
     Environment = "dev"
     ttl = 72
     hc-internet-facing = "true"
-    Name = "nwales-sandbox-dc1"
+    Name = "nomad-server-1"
     Owner = "nwales"
     Purpose = "Sandbox Testing"
     se_region = "AMER"
+    Role = "nomad-server"
   }
 
-  user_data = templatefile("${path.module}/templates/userdata.sh.tftpl", { 
-    datacenter = "dc1", 
-    consul_token = var.consul_token,
-    envoy_version = var.envoy_version
-  } )
+  user_data = templatefile("${path.module}/deploy/nomad_testing/templates/userdata_server.sh.tftpl", {})
 }
 
-resource "aws_instance" "dc2" {
+resource "aws_instance" "client" {
+  count = 2
+
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.small"
   
-  iam_instance_profile    = aws_iam_instance_profile.doormat_profile.name
+  iam_instance_profile = aws_iam_instance_profile.instance.name
 
   tags = {
     Terraform = "true"
     Environment = "dev"
     ttl = 72
     hc-internet-facing = "true"
-    Name = "nwales-sandbox-dc2"
+    Name = "nomad-client-${count.index}"
     Owner = "nwales"
     Purpose = "Sandbox Testing"
     se_region = "AMER"
+    Role = "nomad-client"
   }
 
-  user_data = templatefile("${path.module}/templates/userdata.sh.tftpl", { 
-    datacenter = "dc2", 
-    consul_token = var.consul_token, 
-    envoy_version = var.envoy_version  
-  } )
+  user_data = templatefile("${path.module}/deploy/nomad_testing/templates/userdata_client.sh.tftpl", { client_number = count.index, role = "app" })
 }
 
 
-// resource "aws_network_interface" "web" {
-//   subnet_id   = aws_subnet.my_subnet.id
-//   private_ips = ["172.16.10.100"]
+resource "aws_instance" "proxy" {
+  count = 1
+  
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t3.small"
+  
+  iam_instance_profile = aws_iam_instance_profile.instance.name
 
-//   tags = {
-//     Name = "primary_network_interface"
-//   }
-// } 
+  tags = {
+    Terraform = "true"
+    Environment = "dev"
+    ttl = 72
+    hc-internet-facing = "true"
+    Name = "nomad-proxy-${count.index}"
+    Owner = "nwales"
+    Purpose = "Sandbox Testing"
+    se_region = "AMER"
+    Role = "nomad-client"
+  }
+
+  user_data = templatefile("${path.module}/deploy/nomad_testing/templates/userdata_client.sh.tftpl", {client_number = count.index, role = "proxy"})
+}

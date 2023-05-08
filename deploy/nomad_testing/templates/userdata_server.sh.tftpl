@@ -1,0 +1,104 @@
+#!/bin/sh
+
+## Get instance IP from cloud-init (replace with VM IP when appropriate)
+INSTANCE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
+
+## Install keys, repos and packages
+wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/hashicorp.gpg
+chmod go-w /etc/apt/trusted.gpg.d/hashicorp.gpg
+chmod ugo+r /etc/apt/trusted.gpg.d/hashicorp.gpg
+
+apt-add-repository -y "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+
+apt update && apt install -y unzip consul nomad jq docker.io net-tools
+
+
+cat <<EOT > /etc/nomad.d/nomad.hcl
+name = "nomad_server_01"
+
+# Directory to store agent state
+data_dir = "/opt/nomad/data"
+
+# Address the Nomad agent should bing to for networking
+# 0.0.0.0 is the default and results in using the default private network interface
+# Any configurations under the addresses parameter will take precedence over this value
+bind_addr = "0.0.0.0"
+telemetry {
+  publish_allocation_metrics = true
+  publish_node_metrics       = true
+  prometheus_metrics         = true
+}
+advertise {
+  # Defaults to the first private IP address.
+  http = "0.0.0.0" # must be reachable by Nomad CLI clients
+  rpc  = "$${INSTANCE_IP}" # must be reachable by Nomad client nodes
+  serf = "$${INSTANCE_IP}" # must be reachable by Nomad server nodes
+}
+
+ports {
+  http = 4646
+  rpc  = 4647
+  serf = 4648
+}
+
+# TLS configurations
+tls {
+  http = false
+  rpc  = false
+
+//   ca_file   = "/etc/certs/ca.crt"
+//   cert_file = "/etc/certs/nomad.crt"
+//   key_file  = "/etc/certs/nomad.key"
+}
+
+# Specify the datacenter the agent is a member of
+datacenter = "aws-us-east-2"
+
+# Logging Configurations
+log_level = "INFO"
+log_file  = "/var/log/nomad.log"
+
+# Server & Raft configuration
+server {
+  enabled          = true
+  bootstrap_expect = 1 # Number of Nomad Server expected
+  encrypt          = "Do7GerAsNtzK527dxRZJwpJANdS2NTFbKJIxIod84u0=" 
+  # license_path     = "/etc/nomad.d/nomad.hclic"
+  server_join {
+    retry_join = [ "provider=aws tag_key=Role tag_value=nomad-server" ]
+  }
+  default_scheduler_config { 
+    scheduler_algorithm = "spread" # change from default of binpack
+  } 
+}
+
+# Client Configuration - Disable for Server nodes
+client {
+  enabled = false
+}
+
+# Enable and configure ACLs
+acl {
+  enabled    = false
+  token_ttl  = "30s"
+  policy_ttl = "60s"
+  role_ttl   = "60s"
+}
+
+// # [optional] Specifies configuration for connecting to Consul
+// consul { 
+//   address = "consul.example.com:8500"
+//   ssl = true
+//   verify_server_hostname = true
+// }
+
+// # [optional] Specifies configuration for connecting to Vault
+// vault {
+//   enabled     = true
+//   address     = "https://vault.example.com:8200"
+//   create_from_role = "nomad-cluster"
+// }
+EOT
+
+systemctl daemon-reload
+systemctl enable nomad --now
