@@ -2,6 +2,8 @@ resource "aws_instance" "server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.small"
   
+  count = var.server_count
+
   iam_instance_profile    = aws_iam_instance_profile.instance.name
 
   tags = {
@@ -16,7 +18,7 @@ resource "aws_instance" "server" {
     Role = "nomad-server"
   }
 
-  user_data = templatefile("${path.module}/deploy/nomad_testing/templates/userdata_server.sh.tftpl", {})
+  user_data = templatefile("${path.module}/deploy/nomad_testing/templates/userdata_server.sh.tftpl", { count = var.server_count })
 }
 
 resource "aws_instance" "client" {

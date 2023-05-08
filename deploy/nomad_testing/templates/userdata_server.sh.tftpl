@@ -61,7 +61,7 @@ log_file  = "/var/log/nomad.log"
 # Server & Raft configuration
 server {
   enabled          = true
-  bootstrap_expect = 1 # Number of Nomad Server expected
+  bootstrap_expect = ${count} 
   encrypt          = "Do7GerAsNtzK527dxRZJwpJANdS2NTFbKJIxIod84u0=" 
   # license_path     = "/etc/nomad.d/nomad.hclic"
   server_join {

@@ -5,3 +5,7 @@ variable "consul_token" {
 variable "envoy_version" {
   default = "1.24.1"
 }
+
+variable "server_count" {
+  default = 1
+}

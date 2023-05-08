@@ -83,7 +83,7 @@ chmod +x /usr/local/bin/consul-tproxy-cleanup
 ## Downstream (calling) service 
 cat <<EOT > /etc/systemd/system/downstream.service
 [Unit]
-Description=downstream
+Description=downstream running in dc1
 After=syslog.target network.target
 
 [Service]
