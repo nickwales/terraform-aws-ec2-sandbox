@@ -18,7 +18,7 @@ resource "aws_instance" "server" {
     Role = "nomad-server"
   }
 
-  user_data = templatefile("${path.module}/deploy/nomad_testing/templates/userdata_server.sh.tftpl", { count = var.server_count })
+  user_data = templatefile("${path.module}/templates/userdata_server.sh.tftpl", { count = var.server_count })
 }
 
 resource "aws_instance" "client" {
@@ -41,7 +41,7 @@ resource "aws_instance" "client" {
     Role = "nomad-client"
   }
 
-  user_data = templatefile("${path.module}/deploy/nomad_testing/templates/userdata_client.sh.tftpl", { client_number = count.index, role = "app" })
+  user_data = templatefile("${path.module}/templates/userdata_client.sh.tftpl", { client_number = count.index, role = "app" })
 }
 
 
@@ -65,5 +65,5 @@ resource "aws_instance" "proxy" {
     Role = "nomad-client"
   }
 
-  user_data = templatefile("${path.module}/deploy/nomad_testing/templates/userdata_client.sh.tftpl", {client_number = count.index, role = "proxy"})
+  user_data = templatefile("${path.module}/templates/userdata_client.sh.tftpl", {client_number = count.index, role = "proxy"})
 }
