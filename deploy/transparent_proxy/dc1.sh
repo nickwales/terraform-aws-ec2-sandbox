@@ -1,5 +1,4 @@
-## This deploys
-# A couple of services with transparent proxy
+## This deploys a couple of services with transparent proxy
 
 ## Allow the ingress to talk to the "legacy service"
 cat <<EOT > /root/downstream-intention.hcl
@@ -87,8 +86,8 @@ Description=downstream
 After=syslog.target network.target
 
 [Service]
-Environment=NAME="downstream"
-Environment=MESSAGE="downstream"
+Environment=NAME="downstream in dc1"
+Environment=MESSAGE="downstream in dc1"
 Environment=UPSTREAM_URIS="http://upstream.virtual.consul,http://upstream.virtual.dc2.consul"
 Environment=LISTEN_ADDR="0.0.0.0:9100"
 ExecStart=/opt/fake-service/fake-service
