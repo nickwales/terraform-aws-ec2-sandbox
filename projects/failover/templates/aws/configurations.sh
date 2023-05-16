@@ -22,25 +22,6 @@ chmod +x /opt/fake-service/fake-service
 ##  These can be run on any machine.
 
 
-## Create a TCP listener on port 3456 
-cat <<EOT > /root/ingress.hcl
-Kind = "ingress-gateway"
-Name = "ingress-gateway"
-
-Listeners = [
-  {
-    Port     = 3456
-    Protocol = "tcp"
-    Services = [
-      {
-        Name = "edge-client"
-      }
-    ]
-  }
-]
-EOT
-consul config write /root/ingress.hcl
-
 
 ### Intentions 
 
@@ -56,39 +37,15 @@ Sources = [
 ]
 EOT
 
-## Allow the ingress to talk to the "client"
-cat <<EOT > /root/client-intention.hcl
-Kind = "service-intentions"
-Name = "edge-client"
-Sources = [
-  {
-    Name   = "ingress-gateway"
-    Action = "allow"
-  }
-]
-EOT
-
-
 ## Allow the client to talk to the database
 cat <<EOT > /root/client-intention.hcl
 Kind = "service-intentions"
-Name = "edge-database"
+Name = "aws-database"
 Sources = [
   {
     Name   = "edge-client"
+    Peer   = "edge"
     Action = "allow"
   }
 ]
-EOT
-
-cat <<EOT > /root/database-failover.hcl
-Kind           = "service-resolver"
-Name           = "edge-database"
-ConnectTimeout = "3s"
-Failover = {
-  "*" = {
-    Service = "aws-database"
-    Peer = "aws"
-  }
-}
 EOT
