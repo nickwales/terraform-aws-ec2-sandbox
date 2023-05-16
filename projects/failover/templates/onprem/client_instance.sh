@@ -5,6 +5,8 @@ curl https://func-e.io/install.sh | bash -s -- -b /usr/local/bin
 func-e use ${envoy_version}
 cp /root/.func-e/versions/${envoy_version}/bin/envoy /usr/local/bin
 
+export CONSUL_HTTP_TOKEN=root
+
 # Install fake-service
 mkdir -p /opt/fake-service
 wget https://github.com/nicholasjackson/fake-service/releases/download/v0.24.2/fake_service_linux_amd64.zip
