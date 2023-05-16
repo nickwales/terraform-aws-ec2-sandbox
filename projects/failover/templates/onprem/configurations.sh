@@ -57,7 +57,7 @@ Sources = [
 EOT
 
 ## Allow the ingress to talk to the "client"
-cat <<EOT > /root/client-intention.hcl
+cat <<EOT > /root/edge-client-intention.hcl
 Kind = "service-intentions"
 Name = "edge-client"
 Sources = [
@@ -68,9 +68,10 @@ Sources = [
 ]
 EOT
 
+consul config write /root/edge-client-intention.hcl
 
 ## Allow the client to talk to the database
-cat <<EOT > /root/client-intention.hcl
+cat <<EOT > /root/edge-database-intention.hcl
 Kind = "service-intentions"
 Name = "edge-database"
 Sources = [
@@ -80,6 +81,8 @@ Sources = [
   }
 ]
 EOT
+
+consul config write /root/edge-database-intention.hcl
 
 cat <<EOT > /root/database-failover.hcl
 Kind           = "service-resolver"
@@ -92,3 +95,5 @@ Failover = {
   }
 }
 EOT
+
+consul config write /root/database-failover.hcl
