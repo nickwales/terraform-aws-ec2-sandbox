@@ -6,6 +6,7 @@ func-e use ${envoy_version}
 cp /root/.func-e/versions/${envoy_version}/bin/envoy /usr/local/bin
 
 export CONSUL_HTTP_TOKEN=root
+echo CONSUL_HTTP_TOKEN=root >> /etc/environment
 
 # Install fake-service
 mkdir -p /opt/fake-service
