@@ -82,7 +82,19 @@ Sources = [
 ]
 EOT
 
-consul config write /root/edge-database-intention.hcl
+## Allow the client to talk to the database
+cat <<EOT > /root/edge-cache-intention.hcl
+Kind = "service-intentions"
+Name = "edge-cache"
+Sources = [
+  {
+    Name   = "edge-client"
+    Action = "allow"
+  }
+]
+EOT
+
+consul config write /root/edge-cache-intention.hcl
 
 cat <<EOT > /root/database-failover.hcl
 Kind           = "service-resolver"
@@ -90,8 +102,26 @@ Name           = "edge-database"
 ConnectTimeout = "3s"
 Failover = {
   "*" = {
-    Service = "aws-database"
-    Peer = "aws"
+    Targets = [
+      {Peer = "aws"},
+      {Service = "aws-database"}
+    ]
+  }
+}
+EOT
+
+consul config write /root/database-failover.hcl
+
+
+cat <<EOT > /root/database-failover.hcl
+Kind           = "service-resolver"
+Name           = "aws-cache"
+ConnectTimeout = "3s"
+Failover = {
+  "*" = {
+    Targets = [
+      {Service = "edge-cache"}
+    ]
   }
 }
 EOT

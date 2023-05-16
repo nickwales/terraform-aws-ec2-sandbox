@@ -49,3 +49,16 @@ Sources = [
   }
 ]
 EOT
+
+## Allow the client to talk to the cache
+cat <<EOT > /root/client-intention.hcl
+Kind = "service-intentions"
+Name = "aws-cache"
+Sources = [
+  {
+    Name   = "edge-client"
+    Peer   = "edge"
+    Action = "allow"
+  }
+]
+EOT
