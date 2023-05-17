@@ -38,7 +38,7 @@ EOT
 cat <<EOT > /etc/consul.d/edge-cache.hcl
 service {
   name = "edge-cache"
-  port = 9101
+  port = 9102
   tags = ["vm", "cache"]
 
   checks = [
