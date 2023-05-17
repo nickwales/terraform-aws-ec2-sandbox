@@ -27,7 +27,7 @@ After=syslog.target network.target
 [Service]
 Environment=NAME="aws-cache in ec2"
 Environment=MESSAGE="aws-cache in ec2"
-Environment=LISTEN_ADDR="0.0.0.0:9100"
+Environment=LISTEN_ADDR="0.0.0.0:9101"
 ExecStart=/opt/fake-service/fake-service
 ExecStop=/bin/sleep 5
 Restart=always
@@ -39,13 +39,13 @@ EOT
 cat <<EOT > /etc/consul.d/aws-cache.hcl
 service {
   name = "aws-cache"
-  port = 9100
+  port = 9101
   tags = ["aws", "cache"]
 
   checks = [
     {
-      name = "HTTP API on port 9100"
-      http = "http://127.0.0.1:9100/health"
+      name = "HTTP API on port 9101"
+      http = "http://127.0.0.1:9101/health"
       interval = "10s"
       timeout = "5s"
     }
@@ -65,7 +65,7 @@ After=syslog.target network.target
 
 [Service]
 Environment=CONSUL_HTTP_TOKEN=root
-ExecStart=/usr/bin/consul connect envoy -sidecar-for aws-cache -admin-bind 127.0.0.1:19010
+ExecStart=/usr/bin/consul connect envoy -sidecar-for aws-cache -admin-bind 127.0.0.1:19011
 ExecStop=/bin/sleep 5
 Restart=always
 
