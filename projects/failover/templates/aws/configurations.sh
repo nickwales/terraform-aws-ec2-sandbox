@@ -38,7 +38,7 @@ Sources = [
 EOT
 
 ## Allow the client to talk to the database
-cat <<EOT > /root/client-intention.hcl
+cat <<EOT > /root/aws-database-intention.hcl
 Kind = "service-intentions"
 Name = "aws-database"
 Sources = [
@@ -49,9 +49,10 @@ Sources = [
   }
 ]
 EOT
+consul config write /root/aws-database-intention.hcl
 
 ## Allow the client to talk to the cache
-cat <<EOT > /root/client-intention.hcl
+cat <<EOT > /root/aws-cache-intention.hcl
 Kind = "service-intentions"
 Name = "aws-cache"
 Sources = [
@@ -62,3 +63,28 @@ Sources = [
   }
 ]
 EOT
+consul config write /root/aws-cache-intention.hcl
+
+cat <<EOT > /root/exported-services.hcl
+Kind = "exported-services"
+Name = "default"
+Services = [
+  {
+    Name = "aws-cache"
+    Consumers = [
+      {
+        Peer = "edge"
+      }
+    ]
+  },
+  {
+    Name = "aws-database"
+    Consumers = [
+      {
+        Peer = "edge"
+      }
+    ]
+  }  
+]
+EOT
+consul config write /root/exported-services.hcl
