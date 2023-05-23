@@ -17,16 +17,18 @@ chmod +x /opt/fake-service/fake-service
 
 
 
-## "Database" service 
-cat <<EOT > /etc/systemd/system/edge-cache.service
+## Cache service
+
+cat <<EOT > /etc/systemd/system/cache.service
 [Unit]
-Description=edge-cache
+Description=cache
 After=syslog.target network.target
 
 [Service]
-Environment=NAME="edge-cache on-prem"
-Environment=MESSAGE="edge-cache on-prem"
-Environment=LISTEN_ADDR="0.0.0.0:9102"
+Environment=NAME="edge cache"
+Environment=MESSAGE="edge cache"
+Environment=LISTEN_ADDR="0.0.0.0:9202"
+Environment=UPSTREAM_URIS="http://localhost:10001"
 ExecStart=/opt/fake-service/fake-service
 ExecStop=/bin/sleep 5
 Restart=always
@@ -35,36 +37,43 @@ Restart=always
 WantedBy=multi-user.target
 EOT
 
-cat <<EOT > /etc/consul.d/edge-cache.hcl
+cat <<EOT > /etc/consul.d/cache.hcl
 service {
-  name = "edge-cache"
-  port = 9102
+  name = "cache"
+  port = 9202
   tags = ["vm", "cache"]
 
   checks = [
     {
-      name = "HTTP API on port 9102"
-      http = "http://127.0.0.1:9102/health"
+      name = "HTTP API on port 9202"
+      http = "http://127.0.0.1:9202/health"
       interval = "10s"
       timeout = "5s"
     }
   ]
 
   connect {
-    sidecar_service {}
+    sidecar_service {
+      proxy {
+        upstreams {
+          destination_name = "database"
+          local_bind_port  = 10001
+        }           
+      }      
+    }
   }
   token = "root"
 }
 EOT
 
-cat <<EOT > /etc/systemd/system/edge-cache-sidecar.service
+cat <<EOT > /etc/systemd/system/cache-sidecar.service
 [Unit]
-Description=Edge Cache Sidecar
+Description=Cache Sidecar
 After=syslog.target network.target
 
 [Service]
 Environment=CONSUL_HTTP_TOKEN=root
-ExecStart=/usr/bin/consul connect envoy -sidecar-for edge-cache -admin-bind 127.0.0.1:19011
+ExecStart=/usr/bin/consul connect envoy -sidecar-for cache -admin-bind 127.0.0.1:19021
 ExecStop=/bin/sleep 5
 Restart=always
 
@@ -74,6 +83,5 @@ EOT
 
 consul reload
 systemctl daemon-reload
-systemctl restart edge-cache
-systemctl restart edge-cache-sidecar
-
+systemctl restart cache
+systemctl restart cache-sidecar

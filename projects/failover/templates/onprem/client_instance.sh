@@ -25,9 +25,9 @@ Description=edge-client
 After=syslog.target network.target
 
 [Service]
-Environment=NAME="edge-client"
-Environment=MESSAGE="edge-client"
-Environment=UPSTREAM_URIS="http://localhost:10000,http://localhost:10001"
+Environment=NAME="edge client"
+Environment=MESSAGE="edge client"
+Environment=UPSTREAM_URIS="http://localhost:10000"
 Environment=LISTEN_ADDR="0.0.0.0:9100"
 ExecStart=/opt/fake-service/fake-service
 ExecStop=/bin/sleep 5
@@ -75,14 +75,10 @@ service {
     sidecar_service {
       proxy {
         upstreams {
-          destination_name = "edge-database"
-          local_bind_port  = 10000
-        }
-        upstreams {
-          destination_name = "aws-cache"
+          destination_name = "cache"
           destination_peer = "aws"
-          local_bind_port  = 10001
-        }        
+          local_bind_port  = 10000
+        }          
       }
     }
   }

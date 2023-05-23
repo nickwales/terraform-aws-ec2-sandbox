@@ -19,15 +19,16 @@ chmod +x /opt/fake-service/fake-service
 
 
 ## "cache" service 
-cat <<EOT > /etc/systemd/system/aws-cache.service
+cat <<EOT > /etc/systemd/system/cache.service
 [Unit]
-Description=aws-cache
+Description=cache
 After=syslog.target network.target
 
 [Service]
-Environment=NAME="aws-cache in ec2"
-Environment=MESSAGE="aws-cache in ec2"
-Environment=LISTEN_ADDR="0.0.0.0:9101"
+Environment=NAME="aws cache"
+Environment=MESSAGE="aws cache"
+Environment=LISTEN_ADDR="0.0.0.0:9201"
+Environment=UPSTREAM_URIS="http://localhost:10000"
 ExecStart=/opt/fake-service/fake-service
 ExecStop=/bin/sleep 5
 Restart=always
@@ -36,36 +37,43 @@ Restart=always
 WantedBy=multi-user.target
 EOT
 
-cat <<EOT > /etc/consul.d/aws-cache.hcl
+cat <<EOT > /etc/consul.d/cache.hcl
 service {
-  name = "aws-cache"
-  port = 9101
+  name = "cache"
+  port = 9201
   tags = ["aws", "cache"]
 
   checks = [
     {
-      name = "HTTP API on port 9101"
-      http = "http://127.0.0.1:9101/health"
+      name = "HTTP API on port 9201"
+      http = "http://127.0.0.1:9201/health"
       interval = "10s"
       timeout = "5s"
     }
   ]
 
   connect {
-    sidecar_service {}
+    sidecar_service {
+      proxy {
+        upstreams {
+          destination_name = "database"
+          local_bind_port  = 10000
+        }          
+      }       
+    }
   }
   token = "root"
 }
 EOT
 
-cat <<EOT > /etc/systemd/system/aws-cache-sidecar.service
+cat <<EOT > /etc/systemd/system/cache-sidecar.service
 [Unit]
-Description=AWS cache Sidecar
+Description=cache Sidecar
 After=syslog.target network.target
 
 [Service]
 Environment=CONSUL_HTTP_TOKEN=root
-ExecStart=/usr/bin/consul connect envoy -sidecar-for aws-cache -admin-bind 127.0.0.1:19011
+ExecStart=/usr/bin/consul connect envoy -sidecar-for cache -admin-bind 127.0.0.1:19021
 ExecStop=/bin/sleep 5
 Restart=always
 
@@ -75,8 +83,10 @@ EOT
 
 consul reload
 systemctl daemon-reload
-systemctl restart aws-cache
-systemctl restart aws-cache-sidecar
+systemctl restart cache
+systemctl restart cache-sidecar
+
+
 
 
 

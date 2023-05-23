@@ -19,8 +19,17 @@ chmod +x /opt/fake-service/fake-service
 ### On prem services
 
 ### Consul configuration 
-##  These can be run on any machine.
+###  These can be run on any member of the Consul cluster.
 
+## Proxy Defaults
+cat <<EOT > /root/proxy-defaults.hcl
+Kind      = "proxy-defaults"
+Name      = "global"
+MeshGateway {
+  Mode = "local"
+}
+EOT
+consul config write /root/proxy-defaults.hcl
 
 ## Create a TCP listener on port 3456 
 cat <<EOT > /root/ingress.hcl
@@ -41,6 +50,24 @@ Listeners = [
 EOT
 consul config write /root/ingress.hcl
 
+## Exported services
+
+cat <<EOT > /root/exported-services.hcl
+Kind = "exported-services"
+Name = "default"
+Services = [
+  {
+    Name = "database"
+    Consumers = [
+      {
+        Peer = "aws"
+      }
+    ]
+  }     
+]
+EOT
+consul config write /root/exported-services.hcl
+
 
 ### Intentions 
 
@@ -55,6 +82,7 @@ Sources = [
   }
 ]
 EOT
+consul config write /root/default-intention.hcl
 
 ## Allow the ingress to talk to the "client"
 cat <<EOT > /root/edge-client-intention.hcl
@@ -67,13 +95,12 @@ Sources = [
   }
 ]
 EOT
-
 consul config write /root/edge-client-intention.hcl
 
 ## Allow the client to talk to the database
 cat <<EOT > /root/edge-database-intention.hcl
 Kind = "service-intentions"
-Name = "edge-database"
+Name = "cache"
 Sources = [
   {
     Name   = "edge-client"
@@ -81,49 +108,55 @@ Sources = [
   }
 ]
 EOT
+consul config write /root/edge-database-intention.hcl
 
-## Allow the client to talk to the database
+
+## Allow the client to talk to the cache service
 cat <<EOT > /root/edge-cache-intention.hcl
 Kind = "service-intentions"
-Name = "edge-cache"
+Name = "database"
 Sources = [
   {
-    Name   = "edge-client"
+    Name   = "cache"
     Action = "allow"
-  }
+  },
+  {
+    Name   = "cache"
+    Peer   = "aws"
+    Action = "allow"
+  }  
 ]
 EOT
-
 consul config write /root/edge-cache-intention.hcl
 
 cat <<EOT > /root/database-failover.hcl
 Kind           = "service-resolver"
-Name           = "edge-database"
+Name           = "database"
 ConnectTimeout = "3s"
 Failover = {
   "*" = {
     Targets = [
-      {Peer = "aws"},
-      {Service = "aws-database"}
+      {Peer = "aws"}
     ]
   }
 }
 EOT
-
 consul config write /root/database-failover.hcl
 
 
-cat <<EOT > /root/database-failover.hcl
+# Configure the cache to failover to AWS peer
+cat <<EOT > /root/cache-failover.hcl
 Kind           = "service-resolver"
-Name           = "aws-cache"
+Name           = "cache"
 ConnectTimeout = "3s"
 Failover = {
   "*" = {
     Targets = [
-      {Service = "edge-cache"}
+      {Peer = "aws"}
     ]
   }
 }
 EOT
+consul config write /root/cache-failover.hcl
 
-consul config write /root/database-failover.hcl
+

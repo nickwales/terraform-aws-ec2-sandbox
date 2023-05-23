@@ -16,12 +16,20 @@ rm -f fake_service_linux_amd64.zip
 chmod +x /opt/fake-service/fake-service
 
 
-### On prem services
+### services
 
 ### Consul configuration 
 ##  These can be run on any machine.
 
+### Proxy Defaults
 
+cat <<EOT > /root/proxy-defaults.hcl
+Kind      = "proxy-defaults"
+Name      = "global"
+MeshGateway {
+  Mode = "local"
+}
+EOT
 
 ### Intentions 
 
@@ -36,15 +44,20 @@ Sources = [
   }
 ]
 EOT
+consul config write /root/default-intention.hcl
 
 ## Allow the client to talk to the database
 cat <<EOT > /root/aws-database-intention.hcl
 Kind = "service-intentions"
-Name = "aws-database"
+Name = "database"
 Sources = [
   {
-    Name   = "edge-client"
+    Name   = "cache"
     Peer   = "edge"
+    Action = "allow"
+  },
+  {
+    Name   = "cache"
     Action = "allow"
   }
 ]
@@ -54,7 +67,7 @@ consul config write /root/aws-database-intention.hcl
 ## Allow the client to talk to the cache
 cat <<EOT > /root/aws-cache-intention.hcl
 Kind = "service-intentions"
-Name = "aws-cache"
+Name = "cache"
 Sources = [
   {
     Name   = "edge-client"
@@ -70,21 +83,45 @@ Kind = "exported-services"
 Name = "default"
 Services = [
   {
-    Name = "aws-cache"
+    Name = "cache"
     Consumers = [
       {
         Peer = "edge"
       }
     ]
-  },
-  {
-    Name = "aws-database"
-    Consumers = [
-      {
-        Peer = "edge"
-      }
-    ]
-  }  
+  }      
 ]
 EOT
 consul config write /root/exported-services.hcl
+
+
+# Configure the cache to failover to AWS peer
+cat <<EOT > /root/cache-failover.hcl
+Kind           = "service-resolver"
+Name           = "cache"
+ConnectTimeout = "3s"
+Failover = {
+  "*" = {
+    Targets = [
+      {Peer = "edge"}
+    ]
+  }
+}
+EOT
+consul config write /root/cache-failover.hcl
+
+
+# Configure the database to failover to edge peer
+cat <<EOT > /root/database-failover.hcl
+Kind           = "service-resolver"
+Name           = "database"
+ConnectTimeout = "3s"
+Failover = {
+  "*" = {
+    Targets = [
+      {Peer = "edge"}
+    ]
+  }
+}
+EOT
+consul config write /root/database-failover.hcl
