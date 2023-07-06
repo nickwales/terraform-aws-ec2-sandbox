@@ -1,9 +1,11 @@
 resource "aws_instance" "server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.small"
+  subnet_id     = module.vpc.private_subnets[0]
   
   count = var.server_count
 
+  vpc_security_group_ids = [aws_security_group.sandbox_server.id]
   iam_instance_profile    = aws_iam_instance_profile.instance.name
 
   tags = {
@@ -15,18 +17,24 @@ resource "aws_instance" "server" {
     Owner = "nwales"
     Purpose = "Sandbox Testing"
     se_region = "AMER"
-    Role = "nomad-server"
+    Role = "hashistack-server"
   }
 
-  user_data = templatefile("${path.module}/templates/userdata_server.sh.tftpl", { count = var.server_count })
+  user_data = templatefile("${path.module}/templates/userdata_server.sh.tftpl", { 
+    count             = var.server_count,
+    consul_token      = var.consul_token,
+    consul_datacenter = var.consul_datacenter
+  })
 }
 
 resource "aws_instance" "client" {
-  count = 2
+  count = var.client_count
 
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.small"
+  subnet_id     = module.vpc.private_subnets[0]
   
+  vpc_security_group_ids = [aws_security_group.sandbox_server.id]
   iam_instance_profile = aws_iam_instance_profile.instance.name
 
   tags = {
@@ -38,19 +46,26 @@ resource "aws_instance" "client" {
     Owner = "nwales"
     Purpose = "Sandbox Testing"
     se_region = "AMER"
-    Role = "nomad-client"
+    Role = "hashistack-client"
   }
 
-  user_data = templatefile("${path.module}/templates/userdata_client.sh.tftpl", { client_number = count.index, role = "app" })
+  user_data = templatefile("${path.module}/templates/userdata_client.sh.tftpl", { 
+    client_number     = count.index,
+    role              = "app",
+    consul_token      = var.consul_token,
+    consul_datacenter = var.consul_datacenter
+  })
 }
 
 
 resource "aws_instance" "proxy" {
-  count = 1
+  count = 0
   
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.small"
+  subnet_id     = module.vpc.private_subnets[0]
   
+  vpc_security_group_ids = [aws_security_group.sandbox_server.id]
   iam_instance_profile = aws_iam_instance_profile.instance.name
 
   tags = {
@@ -62,8 +77,13 @@ resource "aws_instance" "proxy" {
     Owner = "nwales"
     Purpose = "Sandbox Testing"
     se_region = "AMER"
-    Role = "nomad-client"
+    Role = "hashistack-client"
   }
 
-  user_data = templatefile("${path.module}/templates/userdata_client.sh.tftpl", {client_number = count.index, role = "proxy"})
+  user_data = templatefile("${path.module}/templates/userdata_client.sh.tftpl", {
+    client_number     = count.index,
+    role              = "proxy",
+    consul_token      = var.consul_token,
+    consul_datacenter = var.consul_datacenter
+  })
 }

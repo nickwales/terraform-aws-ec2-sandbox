@@ -3,6 +3,9 @@
 ## Get instance IP from cloud-init (replace with VM IP when appropriate)
 INSTANCE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
 
+export CONSUL_HTTP_TOKEN=${consul_token}
+echo CONSUL_HTTP_TOKEN=${consul_token} >> /etc/environment
+
 ## Install keys, repos and packages
 wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/hashicorp.gpg
 chmod go-w /etc/apt/trusted.gpg.d/hashicorp.gpg
@@ -12,15 +15,62 @@ apt-add-repository -y "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb
 
 apt update && apt install -y unzip consul nomad jq docker.io net-tools
 
-cat <<EOT > /etc/nomad.d/nomad.hcl
-# Basic Starter Configuration Used for Nomad Course Demonstrations
-# This is NOT a Secure Complete Nomad Client Configuration
+## Configure Consul
+cat <<EOT > /etc/consul.d/consul.hcl
+datacenter = "${consul_datacenter}"
+data_dir = "/opt/consul"
+log_level = "INFO"
+advertise_addr = "$${INSTANCE_IP}"
+bind_addr = "{{ GetDefaultInterfaces | exclude \"type\" \"IPv6\" | attr \"address\" }}"
+client_addr = "0.0.0.0"
+ui = true
+ports {
+  serf_wan = -1
+  grpc = 8502
+}
 
+connect {
+  enabled = true
+}
+
+telemetry {
+  prometheus_retention_time = "10m"
+  disable_hostname = true
+}
+
+acl {
+  enabled = true
+  default_policy = "deny"
+  enable_token_persistence = true
+  tokens {
+    initial_management = "${consul_token}"
+    agent = "${consul_token}"
+  }
+}
+
+retry_join = ["provider=aws tag_key="Role" tag_value="hashistack-server"]
+EOT
+
+systemctl daemon-reload
+systemctl enable consul --now
+sleep 5 # Give consul a moment to start up
+
+## Configure Consul DNS 
+mkdir -p /etc/systemd/resolved.conf.d/
+cat <<EOT > /etc/systemd/resolved.conf.d/consul.conf
+[Resolve]
+DNS=127.0.0.1:8600
+DNSSEC=false
+Domains=~consul
+EOT
+
+systemctl restart systemd-resolved
+
+
+cat <<EOT > /etc/nomad.d/nomad.hcl
 # Directory to store agent state
 data_dir = "/opt/nomad/data"
-# Address the Nomad agent should bing to for networking
-# 0.0.0.0 is the default and results in using the default private network interface
-# Any configurations under the addresses parameter will take precedence over this value
+
 bind_addr = "0.0.0.0"
 telemetry {
   publish_allocation_metrics = true
@@ -33,11 +83,7 @@ advertise {
   rpc  = "$${INSTANCE_IP}" # must be reachable by Nomad client nodes
   serf = "$${INSTANCE_IP}" # must be reachable by Nomad server nodes
 }
-ports {
-  http = 4646
-  rpc  = 4647
-  serf = 4648
-}
+
 # TLS configurations
 # tls {
 #   http = false
