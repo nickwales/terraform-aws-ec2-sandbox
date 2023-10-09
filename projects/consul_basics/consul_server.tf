@@ -17,9 +17,12 @@ resource "aws_instance" "consul_server" {
   }
 
   user_data = templatefile("${path.module}/templates/consul_server.sh.tftpl", { 
-    datacenter = "dc1", 
-    consul_token = var.consul_token,
-  } )
+    datacenter         = "dc1", 
+    consul_token       = var.consul_token,
+    consul_server_key  = data.local_file.consul_server_key.content,
+    consul_server_cert = data.local_file.consul_server_cert.content,
+    consul_agent_ca    = data.local_file.consul_agent_ca.content,
+  })
 }
 
 resource "aws_lb_target_group_attachment" "consul_server_ui" {
