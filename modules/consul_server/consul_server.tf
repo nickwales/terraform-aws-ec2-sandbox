@@ -46,7 +46,7 @@ resource "aws_launch_template" "consul_server" {
     consul_server_key     = var.consul_server_key,
     consul_server_cert    = var.consul_server_cert,
     consul_agent_ca       = var.consul_agent_ca,
-
+    consul_binary         = var.consul_binary,    
   }))
   vpc_security_group_ids = [aws_security_group.consul_server_sg.id]
   

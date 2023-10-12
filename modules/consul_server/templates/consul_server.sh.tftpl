@@ -22,10 +22,12 @@ chmod +x /opt/fake-service/fake-service
 # Lay down consul certificates
 mkdir -p /etc/consul.d/certs
 echo "${consul_agent_ca}" > /etc/consul.d/certs/consul-agent-ca.pem
-echo "${consul_server_key}" > /etc/consul.d/certs/dc1-server-consul-0-key.pem
-echo "${consul_server_cert}" > /etc/consul.d/certs/dc1-server-consul-0.pem
+echo "${consul_server_key}" > /etc/consul.d/certs/${datacenter}-server-consul-0-key.pem
+echo "${consul_server_cert}" > /etc/consul.d/certs/${datacenter}-server-consul-0.pem
 
 # Configure Consul and start it up
+echo CONSUL_LICENSE=${consul_license} >> /etc/consul.d/consul.env
+
 cat <<EOT > /etc/consul.d/consul.hcl
 acl {
   enabled = true
@@ -63,12 +65,16 @@ encrypt = "${consul_encryption_key}"
 auto_encrypt {
   allow_tls = true
 }
-ca_file = "/etc/consul.d/certs/consul-agent-ca.pem"
-cert_file = "/etc/consul.d/certs/dc1-server-consul-0.pem"
-key_file = "/etc/consul.d/certs/dc1-server-consul-0-key.pem"
-verify_incoming = true
-verify_outgoing = true
-verify_server_hostname = true
+
+tls {
+  defaults {
+    ca_file = "/etc/consul.d/certs/consul-agent-ca.pem"
+    cert_file = "/etc/consul.d/certs/${datacenter}-server-consul-0.pem"
+    key_file = "/etc/consul.d/certs/${datacenter}-server-consul-0-key.pem"
+    verify_incoming = true
+    verify_outgoing = true
+  }
+}
 
 ui = true
 EOT
@@ -118,6 +124,24 @@ consul acl token update \
   -id anonymous \
   -policy-name anonymous-policy
 
+# Set mesh and peering configurations
+cat <<EOT > /root/mesh.hcl
+Kind = "mesh"
+Peering {
+  PeerThroughMeshGateways = true
+}
+EOT
+consul config write /root/mesh.hcl
+
+cat <<EOT > /root/proxy-defaults.hcl
+Kind = "proxy-defaults"
+Name = "global"
+MeshGateway {
+   Mode = "local"
+}
+EOT
+consul config write /root/proxy-defaults.hcl
+
 ## We can now run `dig consul.service.consul` and get a response
 
 ## Add some kv's to manage haproxy
@@ -138,3 +162,40 @@ consul kv put service/haproxy/connect_timeout 10s
 #   }
 # }
 # EOF
+
+cat <<EOT > /root/exported-services.hcl
+Kind = "exported-services"
+Name = "default"
+Services = [
+  {
+    Name = "backend"
+    Consumers = [
+      {
+        Peer = "dc1"
+      }
+    ]
+  },
+  {
+    Name = "middleware"
+    Consumers = [
+      {
+        Peer = "dc1"
+      }
+    ]
+  }  
+  
+]
+EOT
+
+consul config write /root/exported-services.hcl
+
+cat <<EOT > /root/sameness-group.hcl
+Kind               = "sameness-group"             # required
+Name               = "middleware"               # required
+Partition          = "default"
+DefaultForFailover = false
+Members = [                                       # required
+  { Partition = "<partition-with-services-in-group>" },
+  { Peer = "<cluster-peer-with-services-in-group>" }
+]
+EOT

@@ -33,7 +33,22 @@ module "consul_gateway_dc1" {
   consul_license = var.consul_license
 }
 
+module "consul_frontend_dc1" {
+  source = "../../modules/frontend"
 
+  name  = var.name
+  owner = var.owner
+  vpc_id = module.vpc.vpc_id
+  region = var.region
+  datacenter = "dc1"
+
+  public_subnets  = module.vpc.public_subnets
+  private_subnets = module.vpc.private_subnets
+
+  consul_agent_ca = data.local_file.consul_agent_ca_dc1.content
+  
+  consul_license = var.consul_license
+}
 
 # resource "aws_autoscaling_group" "consul_server" {
 #   name                      = "consul-server-${var.datacenter}"

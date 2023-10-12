@@ -1,5 +1,5 @@
 output "app_lb" {
-  value = aws_lb.lb.dns_name
+  value = "http://${module.consul_frontend_dc1.lb_address}"
 }
 
 output "dc1_lb_addr" {

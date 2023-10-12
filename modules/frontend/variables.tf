@@ -15,7 +15,9 @@ variable "private_subnets" {
 variable "consul_token" {
   default = "root"
 }
-variable "consul_license" {}
+variable "consul_license" {
+  default = ""
+}
 variable "consul_version" {
   default = "1.16.2"
 }
@@ -23,12 +25,12 @@ variable "consul_binary" {
   description = "Allows upgrading to Consul Enterprise"
   default     = "consul"
 }
-
 variable "datacenter" {
   default = "dc1"
 }
-variable "consul_gateway_count" {
-  description = "The number of Consul gateway instances"
+
+variable "frontend_count" {
+  description = "The number of frontend app instances"
   default = 1
 }
 variable "consul_encryption_key" {

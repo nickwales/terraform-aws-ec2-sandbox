@@ -21,6 +21,10 @@ variable "consul_license" {}
 variable "consul_version" {
   default = "1.16.2"
 }
+variable "consul_binary" {
+  description = "Allows upgrading to Consul Enterprise"
+  default     = "consul"
+}
 
 variable "datacenter" {
   default = "dc1"
