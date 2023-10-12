@@ -16,3 +16,26 @@ variable "private_subnets" {
 variable "consul_token" {
   default = "root"
 }
+
+variable "consul_license" {}
+variable "consul_version" {
+  default = "1.16.2"
+}
+
+variable "datacenter" {
+  default = "dc1"
+}
+
+variable "consul_server_count" {
+  description = "The number of Consul servers, should be 1 or 3"
+  default = 1
+}
+
+variable "consul_gateway_count" {
+  description = "The number of Consul gateway instances"
+  default = 1
+}
+
+variable "consul_encryption_key" {
+  default = "P4+PEZg4jDcWkSgHZ/i3xMuHaMmU8rx2owA4ffl2K8w="
+}

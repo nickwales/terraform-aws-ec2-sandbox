@@ -11,6 +11,13 @@ resource "aws_security_group" "instance_security_group" {
     cidr_blocks      = ["0.0.0.0/0"]
   }
 
+  # ingress {
+  #   description      = "Consul UI"
+  #   from_port        = 8500
+  #   to_port          = 0
+  #   protocol         = -1
+  #   cidr_blocks      = ["0.0.0.0/0"]
+  # }
   egress {
     from_port        = 0
     to_port          = 0
