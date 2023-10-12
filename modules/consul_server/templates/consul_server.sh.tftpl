@@ -1,0 +1,140 @@
+#!/bin/sh
+
+## Get instance IP from cloud-init (replace with VM IP when appropriate)
+INSTANCE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
+
+## Install keys, repos and packages
+wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/hashicorp.gpg
+chmod go-w /etc/apt/trusted.gpg.d/hashicorp.gpg
+chmod ugo+r /etc/apt/trusted.gpg.d/hashicorp.gpg
+
+apt-add-repository -y "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+apt update && apt install -y unzip consul="${consul_version}-*" jq docker.io net-tools
+
+
+# Install fake-service
+mkdir -p /opt/fake-service
+wget https://github.com/nicholasjackson/fake-service/releases/download/v0.26.0/fake_service_linux_amd64.zip
+unzip -od /opt/fake-service/ fake_service_linux_amd64.zip
+rm -f fake_service_linux_amd64.zip
+chmod +x /opt/fake-service/fake-service
+
+# Lay down consul certificates
+mkdir -p /etc/consul.d/certs
+echo "${consul_agent_ca}" > /etc/consul.d/certs/consul-agent-ca.pem
+echo "${consul_server_key}" > /etc/consul.d/certs/dc1-server-consul-0-key.pem
+echo "${consul_server_cert}" > /etc/consul.d/certs/dc1-server-consul-0.pem
+
+# Configure Consul and start it up
+cat <<EOT > /etc/consul.d/consul.hcl
+acl {
+  enabled = true
+  default_policy = "deny"
+  enable_token_persistence = true
+  tokens {
+    initial_management = "${consul_token}"
+    agent = "${consul_token}"
+  }
+}
+advertise_addr = "$${INSTANCE_IP}"
+bind_addr = "{{ GetDefaultInterfaces | exclude \"type\" \"IPv6\" | attr \"address\" }}"
+bootstrap_expect = ${consul_server_count}
+connect {
+  enabled = true
+}
+client_addr = "0.0.0.0"
+datacenter = "${datacenter}"
+data_dir = "/opt/consul"
+log_level = "INFO"
+ports = {
+  grpc = 8502
+  https = 8501
+  grpc_tls = 8503
+}
+retry_join = ["provider=aws tag_key=role tag_value=consul-server-${datacenter}"]
+server = true
+telemetry {
+  prometheus_retention_time = "10m"
+  disable_hostname = true
+}
+
+encrypt = "${consul_encryption_key}"
+
+auto_encrypt {
+  allow_tls = true
+}
+ca_file = "/etc/consul.d/certs/consul-agent-ca.pem"
+cert_file = "/etc/consul.d/certs/dc1-server-consul-0.pem"
+key_file = "/etc/consul.d/certs/dc1-server-consul-0-key.pem"
+verify_incoming = true
+verify_outgoing = true
+verify_server_hostname = true
+
+ui = true
+EOT
+
+systemctl daemon-reload
+systemctl enable consul --now
+
+sleep 15 # Give consul a moment to start up
+
+## Configure Consul DNS 
+mkdir -p /etc/systemd/resolved.conf.d/
+cat <<EOT > /etc/systemd/resolved.conf.d/consul.conf
+[Resolve]
+DNS=127.0.0.1:8600
+DNSSEC=false
+Domains=~consul
+EOT
+
+systemctl restart systemd-resolved
+
+
+# Setup Consul Gateways
+export CONSUL_HTTP_TOKEN="${consul_token}"
+echo CONSUL_HTTP_TOKEN="${consul_token}" >> /etc/environment
+
+## Give the anonymous policy read access (for DNS and catalog)
+cat <<EOT > /root/anonymous_policy.hcl
+agent_prefix "" {
+  policy = "read"
+}
+node_prefix "" {
+  policy = "read"
+}
+service_prefix "" {
+  policy = "read"
+}
+key_prefix "" {
+  policy = "read"
+}
+EOT
+
+consul acl policy create -name "anonymous-policy" \
+  -description "This is the anonymous policy" \
+  -rules @/root/anonymous_policy.hcl
+
+consul acl token update \
+  -id anonymous \
+  -policy-name anonymous-policy
+
+## We can now run `dig consul.service.consul` and get a response
+
+## Add some kv's to manage haproxy
+consul kv put service/haproxy/maxconn 20
+consul kv put service/haproxy/mode "http"
+consul kv put service/haproxy/client_timeout 30s
+consul kv put service/haproxy/server_timeout 30s
+consul kv put service/haproxy/connect_timeout 10s
+
+# curl http://127.0.0.1:8500/v1/query \
+#     --request POST \
+#     --data @- << EOF
+# {
+#   "Name": "mysql",
+#   "Service": {
+#     "Service": "banking-app",
+#     "Tags": ["v1.2.3"]
+#   }
+# }
+# EOF
