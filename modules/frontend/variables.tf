@@ -28,7 +28,10 @@ variable "consul_binary" {
 variable "datacenter" {
   default = "dc1"
 }
-
+variable "partition" {
+  description = "The Consul admin partition this agent should be part of"
+  default = "default"
+}
 variable "frontend_count" {
   description = "The number of frontend app instances"
   default = 1

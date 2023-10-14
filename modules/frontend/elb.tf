@@ -3,7 +3,7 @@ resource "aws_lb" "frontend" {
   internal           = false
   load_balancer_type = "network"
   security_groups    = [aws_security_group.lb.id]
-  subnets            = var.private_subnets
+  subnets            = var.public_subnets
 
   tags = {
     Owner = var.owner

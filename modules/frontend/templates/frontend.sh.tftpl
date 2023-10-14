@@ -8,7 +8,7 @@ wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /etc/apt/trust
 chmod go-w /etc/apt/trusted.gpg.d/hashicorp.gpg
 chmod ugo+r /etc/apt/trusted.gpg.d/hashicorp.gpg
 apt-add-repository -y "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-apt update && apt install -y unzip ${consul}="${consul_version}-*" consul-template hashicorp-envoy haproxy jq net-tools
+apt update && apt install -y unzip ${consul_binary}="${consul_version}*" consul-template hashicorp-envoy haproxy jq net-tools
 
 # Install fake-service
 mkdir -p /opt/fake-service
@@ -32,10 +32,10 @@ Description=frontend
 After=syslog.target network.target
 
 [Service]
-Environment=NAME="Frontend on $${INSTANCE_IP}"
-Environment=MESSAGE="Frontend Service"
+Environment=NAME="Frontend in ${datacenter}"
+Environment=MESSAGE="Frontend Service in ${datacenter}"
 Environment=LISTEN_ADDR="0.0.0.0:8080"
-Environment=UPSTREAM_URIS="http://middleware.service.consul:8090"
+Environment=UPSTREAM_URIS="http://middleware.service.secure.ns.global-api.ap.consul:8080,http://middleware.service.secure.ns.global-api.ap.dc2-global-api.peer.consul:8080,http://middleware.service.global-api.sg.secure.ns.global-api.ap.consul:8080"
 ExecStart=/opt/fake-service/fake-service
 ExecStop=/bin/sleep 5
 Restart=always
@@ -68,61 +68,15 @@ service {
 }
 EOT
 
-# Configure a "middleware" service on the VM
-cat <<EOT > /etc/systemd/system/middleware.service
-[Unit]
-Description=middleware
-After=syslog.target network.target
-
-[Service]
-Environment=NAME="Middleware on $${INSTANCE_IP}"
-Environment=MESSAGE="Middleware Service"
-Environment=LISTEN_ADDR="0.0.0.0:8090"
-Environment=UPSTREAM_URIS="http://read-write.mysql.service.consul:3306,http://read-only.mysql.service.consul:3306,http://redis.service.consul:6379"
-ExecStart=/opt/fake-service/fake-service
-ExecStop=/bin/sleep 5
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOT
-
-
-
-cat <<EOT > /etc/consul.d/middleware.hcl
-service {
-  name = "middleware"
-  port = 8090
-  tags = ["middleware", "stateless"]
-  meta = {
-    product = "Middleware"
-    version = "2.5.3"
-    owner   = "middleware-team@acme.com"
-  } 
-
-  checks = [
-    {
-      name = "Middleware check on port 8090"
-      http = "http://127.0.0.1:8090/health"
-      interval = "10s"
-      timeout = "5s"
-    }
-  ]
-  token = "${consul_token}"
-}
-EOT
-
 systemctl daemon-reload
 systemctl enable frontend --now
-systemctl enable middleware --now
-
 
 # Configure Consul and start it up
-
 echo CONSUL_LICENSE=${consul_license} >> /etc/consul.d/consul.env
 
 cat <<EOT > /etc/consul.d/consul.hcl
 datacenter = "${datacenter}"
+partition = "${partition}"
 data_dir = "/opt/consul"
 log_level = "INFO"
 server = false
@@ -171,7 +125,6 @@ EOT
 
 systemctl daemon-reload
 systemctl enable consul --now
-sleep 15 # Give consul a moment to start up
 
 ## Configure Consul DNS 
 mkdir -p /etc/systemd/resolved.conf.d/
@@ -183,8 +136,3 @@ Domains=~consul
 EOT
 
 systemctl restart systemd-resolved
-
-## Configure Consul Configurations
-export CONSUL_HTTP_TOKEN=${consul_token}
-
-

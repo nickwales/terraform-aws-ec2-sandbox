@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ## Get instance IP from cloud-init (replace with VM IP when appropriate)
 INSTANCE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
@@ -26,42 +26,44 @@ echo "CONSUL_HTTP_TOKEN=${consul_token}" >> /etc/environment
 echo "CONSUL_HTTP_ADDR=https://127.0.0.1:8501" >> /etc/environment
 echo "CONSUL_HTTP_SSL_VERIFY=false" >> /etc/environment
 
-cat <<EOT > /etc/systemd/system/backend.service
+# Configure a "middleware" service on the VM
+cat <<EOT > /etc/systemd/system/middleware.service
 [Unit]
-Description=backend
+Description=middleware
 After=syslog.target network.target
 
 [Service]
-Environment=NAME="backend in ${datacenter}"
-Environment=MESSAGE="backend Service in ${datacenter}"
+Environment=NAME="Middleware in ${datacenter}"
+Environment=MESSAGE="Middleware Service in ${datacenter}"
 Environment=LISTEN_ADDR="0.0.0.0:8080"
+Environment=UPSTREAM_URIS="http://backend.service.datastores.sg.postgres.ns.datastores.ap.consul:8080"
 ExecStart=/opt/fake-service/fake-service
 ExecStop=/bin/sleep 5
 Restart=always
+
 [Install]
 WantedBy=multi-user.target
 EOT
 
 NAMESPACE=""
 if [ ${consul_binary} = "consul-enterprise" ]; then
-  NAMESPACE="namespace = \"postgres\""
+  NAMESPACE="namespace = \"secure\""
 fi
 
-
-cat <<EOT > /etc/consul.d/backend.hcl
+cat <<EOT > /etc/consul.d/middleware.hcl
 service {
-  name = "backend"
+  name = "middleware"
   port = 8080
-  tags = ["backend", "stateful"]
+  tags = ["middleware", "stateless"]
   meta = {
-    product = "backend"
-    version = "4.8.1"
-    owner   = "backend-team@acme.com"
+    product = "Middleware"
+    version = "2.5.3"
+    owner   = "middleware-team@acme.com"
   } 
 
   checks = [
     {
-      name = "backend check on port 8080"
+      name = "Middleware check on port 8080"
       http = "http://127.0.0.1:8080/health"
       interval = "10s"
       timeout = "5s"
@@ -73,8 +75,7 @@ service {
 EOT
 
 systemctl daemon-reload
-systemctl enable backend --now
-
+systemctl enable middleware --now
 
 
 # Configure Consul and start it up
@@ -131,7 +132,6 @@ EOT
 
 systemctl daemon-reload
 systemctl enable consul --now
-sleep 15 # Give consul a moment to start up
 
 ## Configure Consul DNS 
 mkdir -p /etc/systemd/resolved.conf.d/

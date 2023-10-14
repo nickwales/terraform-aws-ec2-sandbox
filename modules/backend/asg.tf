@@ -38,6 +38,7 @@ resource "aws_launch_template" "backend" {
 
   user_data = base64encode(templatefile("${path.module}/templates/backend.sh.tftpl", { 
     datacenter            = var.datacenter, 
+    partition             = var.partition,    
     consul_version        = var.consul_version,
     consul_token          = var.consul_token,
     consul_encryption_key = var.consul_encryption_key,

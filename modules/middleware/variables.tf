@@ -26,11 +26,16 @@ variable "partition" {
   description = "The Consul admin partition this agent should be part of"
   default = "default"
 }
+
+variable "partitions" {
+  description = "A bash array of partitions"
+  default = "('global-api' 'datastores' 'sucky' 'sucky2')"
+}
 variable "datacenter" {
   default = "dc1"
 }
-variable "backend_count" {
-  description = "The number of backend app instances"
+variable "middleware_count" {
+  description = "The number of middleware app instances"
   default = 1
 }
 variable "consul_encryption_key" {
