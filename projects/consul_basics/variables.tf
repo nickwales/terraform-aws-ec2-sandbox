@@ -21,6 +21,9 @@ variable "consul_license" {}
 variable "consul_version" {
   default = "1.16.2"
 }
+variable "consul_binary" {
+  default = "consul"
+}
 
 variable "datacenter" {
   default = "dc1"
@@ -38,4 +41,23 @@ variable "consul_gateway_count" {
 
 variable "consul_encryption_key" {
   default = "P4+PEZg4jDcWkSgHZ/i3xMuHaMmU8rx2owA4ffl2K8w="
+}
+
+variable "dc2_backend_partition" {
+  description = "Admin partition the middleware agents should join"
+  default = "default"
+}
+
+variable "dc1_middleware_partition" {
+  description = "Admin partition the middleware agents should join"
+  default = "default"
+}
+variable "dc2_middleware_partition" {
+  description = "Admin partition the middleware agents should join"
+  default = "default"
+}
+
+variable "dc1_frontend_partition" {
+  description = "Admin partition the frontend agents should join"
+  default = "default"
 }

@@ -15,6 +15,7 @@ module "consul_server_dc2" {
   consul_agent_ca     = data.local_file.consul_agent_ca_dc2.content
   
   consul_license = var.consul_license
+  consul_binary  = var.consul_binary   
 }
 
 module "consul_gateway_dc2" {
@@ -32,6 +33,28 @@ module "consul_gateway_dc2" {
   consul_agent_ca = data.local_file.consul_agent_ca_dc2.content
   
   consul_license = var.consul_license
+  consul_binary  = var.consul_binary 
+}
+
+module "consul_middleware_dc2" {
+  source = "../../modules/middleware"
+
+  name   = var.name
+  owner  = var.owner
+  vpc_id = module.vpc.vpc_id
+  region = var.region
+  
+  datacenter = "dc2"
+  partition  = var.dc2_middleware_partition
+  
+  public_subnets  = module.vpc.public_subnets
+  private_subnets = module.vpc.private_subnets
+
+  consul_agent_ca = data.local_file.consul_agent_ca_dc2.content
+  
+  consul_license = var.consul_license
+  consul_binary  = var.consul_binary
+  
 }
 
 module "consul_backend_dc2" {
@@ -42,6 +65,7 @@ module "consul_backend_dc2" {
   vpc_id = module.vpc.vpc_id
   region = var.region
   datacenter = "dc2"
+  partition = var.dc2_backend_partition
 
   public_subnets  = module.vpc.public_subnets
   private_subnets = module.vpc.private_subnets
@@ -49,4 +73,5 @@ module "consul_backend_dc2" {
   consul_agent_ca = data.local_file.consul_agent_ca_dc2.content
   
   consul_license = var.consul_license
+  consul_binary  = var.consul_binary
 }
