@@ -130,6 +130,3 @@ Services = [
 EOF
 )
 CONSUL_HTTP_ADDR=$consul_dc2_addr consul config write -partition datastores - <<< $exported_services_datastores_dc2
-
-
-dig middleware.service.global-api.sg.secure.ns.global-api.ap.consul
