@@ -1,5 +1,5 @@
-resource "aws_security_group" "frontend" {
-  name_prefix = "${var.name}-${var.datacenter}-frontend"
+resource "aws_security_group" "sg" {
+  name_prefix = "${var.name}-${var.consul_datacenter}-frontend"
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc_id
 
@@ -21,7 +21,7 @@ resource "aws_security_group" "frontend" {
 }
 
 resource "aws_security_group" "lb" {
-  name_prefix = "${var.name}-${var.datacenter}-frontend-lb"
+  name_prefix = "${var.name}-${var.consul_datacenter}-${var.name}"
   description = "Allow HTTP inbound traffic"
   vpc_id      = var.vpc_id
 

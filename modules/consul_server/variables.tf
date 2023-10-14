@@ -42,3 +42,9 @@ variable "consul_encryption_key" {
 variable "consul_server_key" {}
 variable "consul_server_cert" {}
 variable "consul_agent_ca" {}
+
+variable "target_groups" {
+  description = "List of target groups"
+  type    = list(string)
+  default = [""]
+}

@@ -1,10 +1,10 @@
-resource "aws_iam_instance_profile" "middleware" {
-  name_prefix = "${var.name}-${var.datacenter}-middleware"
-  role        = aws_iam_role.middleware.name
+resource "aws_iam_instance_profile" "doormat_profile" {
+  name_prefix = var.name
+  role        = aws_iam_role.doormat_role.name
 }
 
-resource "aws_iam_role" "middleware" {
-  name_prefix = "${var.name}-${var.datacenter}-middleware"
+resource "aws_iam_role" "doormat_role" {
+  name_prefix = var.name
   path        = "/"
 
   assume_role_policy = jsonencode({
@@ -22,10 +22,10 @@ resource "aws_iam_role" "middleware" {
   })
 }
 
-resource "aws_iam_role_policy" "middleware" {
-    name_prefix = "${var.name}-${var.datacenter}-middleware"
+resource "aws_iam_role_policy" "doormat_policy" {
+    name_prefix = var.name
 
-    role = aws_iam_role.middleware.id
+    role = aws_iam_role.doormat_role.id
     policy = jsonencode({
         Version = "2012-10-17"
         Statement = [
@@ -43,11 +43,11 @@ resource "aws_iam_role_policy" "middleware" {
 }
 
 resource "aws_iam_role_policy_attachment" "read-only-attach" {
-  role       = aws_iam_role.middleware.id
+  role       = aws_iam_role.doormat_role.id
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
 }
 
 resource "aws_iam_role_policy_attachment" "ssm-managed-attach" {
-  role       = aws_iam_role.middleware.id
+  role       = aws_iam_role.doormat_role.id
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }

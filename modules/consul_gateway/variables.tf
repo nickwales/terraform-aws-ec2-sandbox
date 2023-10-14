@@ -24,6 +24,11 @@ variable "consul_binary" {
   default     = "consul"
 }
 
+variable "partition" {
+  description = "The Consul admin partition this agent should be part of"
+  default = "default"
+}
+
 variable "datacenter" {
   default = "dc1"
 }
@@ -35,3 +40,9 @@ variable "consul_encryption_key" {
   default = "P4+PEZg4jDcWkSgHZ/i3xMuHaMmU8rx2owA4ffl2K8w="
 }
 variable "consul_agent_ca" {}
+
+variable "target_groups" {
+  description = "List of target groups"
+  type    = list(string)
+  default = [""]
+}

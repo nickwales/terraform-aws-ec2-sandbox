@@ -26,63 +26,58 @@ echo "CONSUL_HTTP_TOKEN=${consul_token}" >> /etc/environment
 echo "CONSUL_HTTP_ADDR=https://127.0.0.1:8501" >> /etc/environment
 echo "CONSUL_HTTP_SSL_VERIFY=false" >> /etc/environment
 
-cat <<EOT > /etc/systemd/system/backend.service
+cat <<EOT > "/etc/systemd/system/${name}.service"
 [Unit]
-Description=backend
+Description=${name}
 After=syslog.target network.target
 
 [Service]
-Environment=NAME="backend in ${datacenter}"
-Environment=MESSAGE="backend Service in ${datacenter}"
-Environment=LISTEN_ADDR="0.0.0.0:8080"
+Environment=NAME="${name} in ${consul_datacenter}"
+Environment=MESSAGE="${name} Service in ${consul_datacenter}"
+Environment=LISTEN_ADDR="0.0.0.0:${app_port}"
+Environment=UPSTREAM_URIS="${upstream_uris}"
 ExecStart=/opt/fake-service/fake-service
 ExecStop=/bin/sleep 5
 Restart=always
+
 [Install]
 WantedBy=multi-user.target
 EOT
 
-NAMESPACE=""
-if [ ${consul_binary} = "consul-enterprise" ]; then
-  NAMESPACE="namespace = \"postgres\""
-fi
 
-
-cat <<EOT > /etc/consul.d/backend.hcl
+cat <<EOT > /etc/consul.d/${name}.hcl
 service {
-  name = "backend"
-  port = 8080
-  tags = ["backend", "stateful"]
+  name = "${name}"
+  port = ${app_port}
+  tags = ["${name}"]
   meta = {
-    product = "backend"
+    product = "${name}"
     version = "4.8.1"
-    owner   = "backend-team@acme.com"
+    owner   = "${name}-team@acme.com"
   } 
 
   checks = [
     {
-      name = "backend check on port 8080"
-      http = "http://127.0.0.1:8080/health"
+      name = "HTTP check on port ${app_port}"
+      http = "http://127.0.0.1:${app_port}/health"
       interval = "10s"
       timeout = "5s"
     }
   ]
   token = "${consul_token}"
-  $${NAMESPACE}
+  namespace = "${consul_namespace}"
 }
 EOT
 
 systemctl daemon-reload
-systemctl enable backend --now
-
-
+systemctl enable ${name} --now
 
 # Configure Consul and start it up
 echo CONSUL_LICENSE=${consul_license} >> /etc/consul.d/consul.env
 
 cat <<EOT > /etc/consul.d/consul.hcl
-datacenter = "${datacenter}"
-partition = "${partition}"
+datacenter = "${consul_datacenter}"
+partition = "${consul_partition}"
 data_dir = "/opt/consul"
 log_level = "INFO"
 server = false
@@ -126,12 +121,11 @@ ports = {
   grpc_tls = 8503
 }
 
-retry_join = ["provider=aws tag_key=role tag_value=consul-server-${datacenter}"]
+retry_join = ["provider=aws tag_key=role tag_value=consul-server-${consul_datacenter}"]
 EOT
 
 systemctl daemon-reload
 systemctl enable consul --now
-sleep 15 # Give consul a moment to start up
 
 ## Configure Consul DNS 
 mkdir -p /etc/systemd/resolved.conf.d/

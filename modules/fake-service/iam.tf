@@ -1,10 +1,10 @@
-resource "aws_iam_instance_profile" "frontend" {
-  name_prefix = "${var.name}-${var.datacenter}-frontend"
-  role        = aws_iam_role.frontend.name
+resource "aws_iam_instance_profile" "profile" {
+  name_prefix = "${var.name}-${var.consul_datacenter}"
+  role        = aws_iam_role.role.name
 }
 
-resource "aws_iam_role" "frontend" {
-  name_prefix = "${var.name}-${var.datacenter}-frontend"
+resource "aws_iam_role" "role" {
+  name_prefix = "${var.name}-${var.consul_datacenter}"
   path        = "/"
 
   assume_role_policy = jsonencode({
@@ -22,10 +22,10 @@ resource "aws_iam_role" "frontend" {
   })
 }
 
-resource "aws_iam_role_policy" "frontend" {
-    name_prefix = "${var.name}-${var.datacenter}-frontend"
+resource "aws_iam_role_policy" "policy" {
+    name_prefix = "${var.name}-${var.consul_datacenter}"
 
-    role = aws_iam_role.frontend.id
+    role = aws_iam_role.role.id
     policy = jsonencode({
         Version = "2012-10-17"
         Statement = [
@@ -43,11 +43,11 @@ resource "aws_iam_role_policy" "frontend" {
 }
 
 resource "aws_iam_role_policy_attachment" "read-only-attach" {
-  role       = aws_iam_role.frontend.id
+  role       = aws_iam_role.role.id
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
 }
 
 resource "aws_iam_role_policy_attachment" "ssm-managed-attach" {
-  role       = aws_iam_role.frontend.id
+  role       = aws_iam_role.role.id
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }

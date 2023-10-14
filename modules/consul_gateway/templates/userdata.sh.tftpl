@@ -9,7 +9,7 @@ chmod go-w /etc/apt/trusted.gpg.d/hashicorp.gpg
 chmod ugo+r /etc/apt/trusted.gpg.d/hashicorp.gpg
 apt-add-repository -y "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
 
-apt update && apt install -y unzip ${consul}="${consul_version}-*" consul-template hashicorp-envoy haproxy jq net-tools
+apt update && apt install -y unzip ${consul_binary}="${consul_version}*" consul-template hashicorp-envoy haproxy jq net-tools
 
 # Lay down consul certificates
 mkdir -p /etc/consul.d/certs

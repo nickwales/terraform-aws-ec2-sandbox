@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ## Get instance IP from cloud-init (replace with VM IP when appropriate)
 INSTANCE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
@@ -9,7 +9,7 @@ chmod go-w /etc/apt/trusted.gpg.d/hashicorp.gpg
 chmod ugo+r /etc/apt/trusted.gpg.d/hashicorp.gpg
 
 apt-add-repository -y "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-apt update && apt install -y unzip consul="${consul_version}-*" jq docker.io net-tools
+apt update && apt install -y unzip ${consul_binary}="${consul_version}*" jq docker.io net-tools
 
 
 # Install fake-service
@@ -82,7 +82,24 @@ EOT
 systemctl daemon-reload
 systemctl enable consul --now
 
-sleep 15 # Give consul a moment to start up
+sleep 10 # Give consul a moment to start up
+
+## If enterprise Configure consul admin partitions
+if [ ${consul_binary} = "consul-enterprise" ]; then
+  consul partition create -name global-api
+  consul partition create -name datastores
+  consul partition create -name ui
+
+  consul namespace create -name public -partition ui
+  consul namespace create -name private -partition ui
+
+  consul namespace create -name postgres -partition datastores
+  consul namespace create -name mongo -partition datastores
+  consul namespace create -name elasticsearch -partition datastores
+
+  consul namespace create -name secure -partition global-api
+  consul namespace create -name insecure -partition global-api
+fi
 
 ## Configure Consul DNS 
 mkdir -p /etc/systemd/resolved.conf.d/
@@ -151,17 +168,16 @@ consul kv put service/haproxy/client_timeout 30s
 consul kv put service/haproxy/server_timeout 30s
 consul kv put service/haproxy/connect_timeout 10s
 
-# curl http://127.0.0.1:8500/v1/query \
-#     --request POST \
-#     --data @- << EOF
-# {
-#   "Name": "mysql",
-#   "Service": {
-#     "Service": "banking-app",
-#     "Tags": ["v1.2.3"]
-#   }
-# }
-# EOF
+cat <<EOT > /root/sameness-group.hcl
+Kind               = "sameness-group"             # required
+Name               = "middleware"               # required
+Partition          = "default"
+DefaultForFailover = false
+Members = [                                       # required
+  { Partition = "default" },
+  { Peer = "dc1" }
+]
+EOT
 
 cat <<EOT > /root/exported-services.hcl
 Kind = "exported-services"
@@ -179,23 +195,11 @@ Services = [
     Name = "middleware"
     Consumers = [
       {
-        Peer = "dc1"
+        SamenessGroup = "global-api"
       }
     ]
-  }  
-  
+  }   
 ]
 EOT
 
 consul config write /root/exported-services.hcl
-
-cat <<EOT > /root/sameness-group.hcl
-Kind               = "sameness-group"             # required
-Name               = "middleware"               # required
-Partition          = "default"
-DefaultForFailover = false
-Members = [                                       # required
-  { Partition = "<partition-with-services-in-group>" },
-  { Peer = "<cluster-peer-with-services-in-group>" }
-]
-EOT

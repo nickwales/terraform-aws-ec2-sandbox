@@ -25,14 +25,19 @@ variable "consul_binary" {
   description = "Allows upgrading to Consul Enterprise"
   default     = "consul"
 }
-variable "datacenter" {
+
+variable "consul_namespace" {
+  default = "default"
+}
+
+variable "consul_datacenter" {
   default = "dc1"
 }
-variable "partition" {
+variable "consul_partition" {
   description = "The Consul admin partition this agent should be part of"
   default = "default"
 }
-variable "frontend_count" {
+variable "instance_count" {
   description = "The number of frontend app instances"
   default = 1
 }
@@ -40,3 +45,19 @@ variable "consul_encryption_key" {
   default = "P4+PEZg4jDcWkSgHZ/i3xMuHaMmU8rx2owA4ffl2K8w="
 }
 variable "consul_agent_ca" {}
+
+variable "upstream_uris" {
+  description = "Comma separated list of upstream URIs"
+  default = ""
+}
+
+variable "app_port" {
+  description = "Port that fake-service should run on"
+  default = "8080"
+}
+
+variable "target_groups" {
+  description = "List of target groups"
+  type    = list(string)
+  default = [""]
+}
