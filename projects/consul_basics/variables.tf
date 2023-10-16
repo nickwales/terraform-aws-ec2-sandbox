@@ -43,21 +43,17 @@ variable "consul_encryption_key" {
   default = "P4+PEZg4jDcWkSgHZ/i3xMuHaMmU8rx2owA4ffl2K8w="
 }
 
-variable "dc2_backend_partition" {
+variable "backend_partition" {
   description = "Admin partition the middleware agents should join"
   default = "default"
 }
 
-variable "dc1_middleware_partition" {
-  description = "Admin partition the middleware agents should join"
-  default = "default"
-}
-variable "dc2_middleware_partition" {
+variable "middleware_partition" {
   description = "Admin partition the middleware agents should join"
   default = "default"
 }
 
-variable "dc1_frontend_partition" {
+variable "frontend_partition" {
   description = "Admin partition the frontend agents should join"
   default = "default"
 }
