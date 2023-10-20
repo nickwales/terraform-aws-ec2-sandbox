@@ -8,75 +8,23 @@ wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /etc/apt/trust
 chmod go-w /etc/apt/trusted.gpg.d/hashicorp.gpg
 chmod ugo+r /etc/apt/trusted.gpg.d/hashicorp.gpg
 apt-add-repository -y "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-apt update && apt install -y unzip ${consul_binary}="${consul_version}*" consul-template hashicorp-envoy haproxy jq net-tools
-
-# Install fake-service
-mkdir -p /opt/fake-service
-wget https://github.com/nicholasjackson/fake-service/releases/download/v0.26.0/fake_service_linux_amd64.zip
-unzip -od /opt/fake-service/ fake_service_linux_amd64.zip
-rm -f fake_service_linux_amd64.zip
-chmod +x /opt/fake-service/fake-service
+apt update && apt install -y unzip ${nomad_binary}="${nomad_version}*" ${consul_binary}="${consul_version}*" consul-template hashicorp-envoy haproxy jq net-tools docker.io
 
 # Lay down consul certificates
 mkdir -p /etc/consul.d/certs
-echo "${consul_agent_ca}" > /etc/consul.d/certs/consul-agent-ca.pem
+echo "${consul_ca_file}" > /etc/consul.d/certs/consul-agent-ca.pem
 
 # Setup CLI
 echo "CONSUL_HTTP_TOKEN=${consul_token}" >> /etc/environment
 echo "CONSUL_HTTP_ADDR=https://127.0.0.1:8501" >> /etc/environment
 echo "CONSUL_HTTP_SSL_VERIFY=false" >> /etc/environment
 
-cat <<EOT > "/etc/systemd/system/${name}.service"
-[Unit]
-Description=${name}
-After=syslog.target network.target
-
-[Service]
-Environment=NAME="${name} in ${consul_datacenter}"
-Environment=MESSAGE="${name} Service in ${consul_datacenter}"
-Environment=LISTEN_ADDR="0.0.0.0:${app_port}"
-Environment=UPSTREAM_URIS="${upstream_uris}"
-ExecStart=/opt/fake-service/fake-service
-ExecStop=/bin/sleep 5
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOT
-
-
-cat <<EOT > /etc/consul.d/${name}.hcl
-service {
-  name = "${name}"
-  port = ${app_port}
-  tags = ["${name}"]
-  meta = {
-    product = "${name}"
-    version = "4.8.1"
-    owner   = "${name}-team@acme.com"
-  } 
-
-  checks = [
-    {
-      name = "HTTP check on port ${app_port}"
-      http = "http://127.0.0.1:${app_port}/health"
-      interval = "10s"
-      timeout = "5s"
-    }
-  ]
-  token = "${consul_token}"
-  namespace = "${consul_namespace}"
-}
-EOT
-
-systemctl daemon-reload
-systemctl enable ${name} --now
 
 # Configure Consul and start it up
 echo CONSUL_LICENSE=${consul_license} >> /etc/consul.d/consul.env
 
 cat <<EOT > /etc/consul.d/consul.hcl
-datacenter = "${consul_datacenter}"
+datacenter = "${datacenter}"
 partition = "${consul_partition}"
 data_dir = "/opt/consul"
 log_level = "INFO"
@@ -121,7 +69,7 @@ ports = {
   grpc_tls = 8503
 }
 
-retry_join = ["provider=aws tag_key=role tag_value=consul-server-${consul_datacenter}"]
+retry_join = ["provider=aws tag_key=role tag_value=consul-server-${datacenter}"]
 EOT
 
 systemctl daemon-reload
@@ -137,3 +85,46 @@ Domains=~consul
 EOT
 
 systemctl restart systemd-resolved
+
+
+# Configure Nomad and start it up
+
+cat <<EOT > /etc/nomad.d/nomad.hcl
+# Setup data dir
+data_dir = "/opt/nomad"
+
+# Enable the server
+client {
+  enabled = true
+}
+
+# tls {
+#   http = true
+#   rpc  = true
+
+#   ca_file   = "nomad-agent-ca.pem"
+#   cert_file = "global-server-nomad.pem"
+#   key_file  = "global-server-nomad-key.pem"
+
+#   verify_server_hostname = true
+#   verify_https_client    = true
+# }
+
+### Need to enable talking to Consul over TLS 
+consul {
+  token = "${consul_token}" 
+}
+acl {
+  enabled    = true
+  token_ttl  = "30s"
+  policy_ttl = "60s"
+  role_ttl   = "60s"
+}
+EOT
+
+curl -L -o cni-plugins.tgz "https://github.com/containernetworking/plugins/releases/download/v1.3.0/cni-plugins-linux-$( [ $(uname -m) = aarch64 ] && echo arm64 || echo amd64)"-v1.3.0.tgz && \
+  sudo mkdir -p /opt/cni/bin && \
+  sudo tar -C /opt/cni/bin -xzf cni-plugins.tgz
+
+
+systemctl enable nomad --now

@@ -61,3 +61,7 @@ variable "target_groups" {
   type    = list(string)
   default = [""]
 }
+
+variable "consul_agent_token" {
+  default = "root"
+}
