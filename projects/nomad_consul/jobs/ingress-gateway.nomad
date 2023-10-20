@@ -32,7 +32,7 @@ job "consul-ingress-gateway" {
           proxy {}
           ingress {
             tls {
-              enabled = false
+              enabled = true
               tls_min_version = "TLSv1_2"
               tls_max_version = "TLSv1_2"
             }
