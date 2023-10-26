@@ -5,6 +5,13 @@ resource "aws_autoscaling_group" "asg" {
   health_check_grace_period = 300
   health_check_type         = "ELB"
   desired_capacity          = "${var.instance_count}"
+  
+  instance_refresh {
+    strategy               = "Rolling"
+    preferences {
+      min_healthy_percentage = 0  
+    }
+  }
   launch_template {
     id = aws_launch_template.lt.id
   }
@@ -39,6 +46,7 @@ resource "aws_launch_template" "lt" {
 
   user_data = base64encode(templatefile("${path.module}/templates/userdata.sh.tftpl", { 
     name                  = var.name,
+    message               = local.message,
     consul_datacenter     = var.consul_datacenter, 
     consul_partition      = var.consul_partition,
     consul_version        = var.consul_version,

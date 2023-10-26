@@ -33,7 +33,7 @@ After=syslog.target network.target
 
 [Service]
 Environment=NAME="${name} in ${consul_datacenter}"
-Environment=MESSAGE="${name} Service in ${consul_datacenter}"
+Environment=MESSAGE="${message}"
 Environment=LISTEN_ADDR="0.0.0.0:${app_port}"
 Environment=UPSTREAM_URIS="${upstream_uris}"
 ExecStart=/opt/fake-service/fake-service
