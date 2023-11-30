@@ -8,7 +8,6 @@ job "upstream" {
 
     network {
         port "http" {
-          // static = "9090"
           to     = "9091"
         }
 
@@ -25,16 +24,9 @@ job "upstream" {
         timeout  = "5s"
       }
 
-      // connect {
-      //   sidecar_service {
-      //     proxy {
-      //       upstreams {
-      //         destination_name = "upstream"
-      //         local_bind_port  = 8080
-      //       }
-      //     }
-      //   }
-      // }      
+      connect {
+          sidecar_service {}
+      }      
     }          
 
     task "upstream" {
@@ -50,10 +42,7 @@ job "upstream" {
       }
 
       identity {
-        # Expose Workload Identity in NOMAD_TOKEN env var poop
         env = false
-
-        # Expose Workload Identity in ${NOMAD_SECRETS_DIR}/nomad_token file
         file = true
       }               
     }

@@ -46,8 +46,6 @@ job "midstream" {
       #  UPSTREAM_URIS = "http://127.0.0.1:9092"
         MESSAGE = "Midstream"
         LISTEN_ADDR = "0.0.0.0:9095"
-        ERROR_CODE = 200
-        poop = true
       }
       identity {
         # Expose Workload Identity in NOMAD_TOKEN env var poop
