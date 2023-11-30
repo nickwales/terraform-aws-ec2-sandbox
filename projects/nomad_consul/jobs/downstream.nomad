@@ -44,8 +44,6 @@ job "downstream" {
 
       env {
         UPSTREAM_URIS = "http://127.0.0.1:8081"
-        ERROR_CODE = 200
-        POOP = true
       }
       identity {
         # Expose Workload Identity in NOMAD_TOKEN env var poop
