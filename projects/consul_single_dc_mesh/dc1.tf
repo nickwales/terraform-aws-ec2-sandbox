@@ -37,6 +37,9 @@ module "consul_gateway_dc1" {
   region = var.region
   datacenter = "dc1"
 
+  consul_partition  = "default"
+  consul_namespace  = "network"
+
   public_subnets  = module.vpc.public_subnets
   private_subnets = module.vpc.private_subnets
 
@@ -45,7 +48,7 @@ module "consul_gateway_dc1" {
   consul_license = var.consul_license
   consul_binary  = var.consul_binary
 
-  target_groups = [aws_lb_target_group.frontend.arn]
+  target_groups = [aws_lb_target_group.mesh.arn]
 }
 
 
@@ -58,7 +61,7 @@ module "frontend_dc1" {
   region = var.region
   consul_datacenter = "dc1"
   consul_partition = "default"
-  consul_namespace = "default"
+  consul_namespace = "ui"
 
   private_subnets = module.vpc.private_subnets
 
@@ -67,7 +70,7 @@ module "frontend_dc1" {
   consul_license = var.consul_license
   consul_binary  = var.consul_binary  
 
-  upstream_uris = "http://middleware.virtual.default.ns.consul"
+  upstream_uris = "http://middleware.virtual.middleware.ns.consul"
 
 }
 
@@ -83,12 +86,12 @@ module "consul_middleware_dc1" {
   
   consul_datacenter = "dc1"
   consul_partition  = "default"
-  consul_namespace  = "default"
+  consul_namespace  = "middleware"
   consul_agent_ca = data.local_file.consul_agent_ca_dc1.content
   consul_license = var.consul_license
   consul_binary  = var.consul_binary
   
-  upstream_uris = "http://database.virtual.default.ns.consul"
+  upstream_uris = "http://database.virtual.datastores.ns.consul"
 }
 
 module "consul_database_dc1" {
@@ -103,7 +106,7 @@ module "consul_database_dc1" {
   
   consul_datacenter = "dc1"
   consul_partition  = "default"
-  consul_namespace  = "default"
+  consul_namespace  = "datastores"
   consul_agent_ca = data.local_file.consul_agent_ca_dc1.content
   consul_license = var.consul_license
   consul_binary  = var.consul_binary
@@ -139,7 +142,7 @@ module "service_a_dc1" {
   source = "../../modules/fake-service"
 
   name  = "service-a"
-  service_tags = ["gary"]
+  service_tags = ["v1_0"]
   owner = var.owner
   vpc_id = module.vpc.vpc_id
   region = var.region
@@ -155,7 +158,7 @@ module "service_a_dc1" {
   
   upstream_uris = "http://service-b.service.consul:8080,http://v1_0.service-b.service.consul:8080,http://v1_1.service-b.service.consul:8080"
 
-  target_groups = [aws_lb_target_group.app.arn]
+  target_groups = [aws_lb_target_group.discovery.arn]
 }
 
 module "service_b_dc1" {

@@ -31,37 +31,37 @@ resource "aws_lb_target_group" "consul" {
 
 
 
-resource "aws_lb_listener" "frontend" {
+resource "aws_lb_listener" "mesh" {
   load_balancer_arn = aws_lb.lb.arn
   port              = 80
   protocol          = "TCP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.frontend.arn
+    target_group_arn = aws_lb_target_group.mesh.arn
   }
 }
 
-resource "aws_lb_target_group" "frontend" {
-  name        = "${var.name}-${var.datacenter}-frontend"
+resource "aws_lb_target_group" "mesh" {
+  name        = "${var.name}-${var.datacenter}-mesh"
   port        = 8080
   protocol    = "TCP"
   vpc_id      = module.vpc.vpc_id
 }
 
-resource "aws_lb_listener" "app" {
+resource "aws_lb_listener" "discovery" {
   load_balancer_arn = aws_lb.lb.arn
   port              = 8080
   protocol          = "TCP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.app.arn
+    target_group_arn = aws_lb_target_group.discovery.arn
   }
 }
 
-resource "aws_lb_target_group" "app" {
-  name        = "${var.name}-${var.datacenter}-app"
+resource "aws_lb_target_group" "discovery" {
+  name        = "${var.name}-${var.datacenter}-discovery"
   port        = 8080
   protocol    = "TCP"
   vpc_id      = module.vpc.vpc_id

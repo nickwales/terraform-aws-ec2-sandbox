@@ -49,7 +49,7 @@ cat <<EOT > /etc/consul.d/${name}.hcl
 service {
   name = "${name}"
   port = ${app_port}
-  tags = ["${name}"]
+  tags = ${service_tags}
   meta = {
     product = "${name}"
     version = "4.8.1"
@@ -74,6 +74,7 @@ systemctl enable ${name} --now
 
 # Configure Consul and start it up
 echo CONSUL_LICENSE=${consul_license} >> /etc/consul.d/consul.env
+echo CONSUL_HTTP_TOKEN=${consul_token} >> /etc/consul.d/consul.env
 
 cat <<EOT > /etc/consul.d/consul.hcl
 datacenter = "${consul_datacenter}"

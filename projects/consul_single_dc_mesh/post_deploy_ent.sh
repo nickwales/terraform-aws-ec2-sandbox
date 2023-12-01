@@ -9,7 +9,7 @@
 
 
 # Set the consul cluster addresses
-consul_dc1_addr="$(cat terraform.tfstate | jq -r '.outputs.app_addr.value'):8500"
+consul_dc1_addr="$(cat terraform.tfstate | jq -r '.outputs.consul_entrypoint.value')"
 #consul_dc2_addr=$(cat terraform.tfstate | jq -r '.outputs.dc2_consul_lb.value')
 consul_token=$(cat terraform.tfstate | jq -r '.outputs.consul_token.value')
 
@@ -19,6 +19,7 @@ export CONSUL_HTTP_ADDR=$consul_dc1_addr
 consul namespace create -name ui -partition default
 consul namespace create -name middleware -partition default
 consul namespace create -name datastores -partition default
+consul namespace create -name network -partition default
 
 consul intention create -deny "*" "*" 
 
@@ -82,6 +83,17 @@ EOT
 )
 consul config write - <<< $telemetry_collector_intention
 
+proxy_defaults=$(cat <<EOT
+Kind      = "proxy-defaults"
+Name      = "global"
+Config {
+  envoy_telemetry_collector_bind_socket_dir = "/opt/envoy_stats"
+  protocol = "http"
+}
+EOT
+)
+consul config write - <<< $proxy_defaults
+
 ## Ingress gateway
 ingress_config=$(cat <<EOT
 Kind = "ingress-gateway"
@@ -94,7 +106,7 @@ Listeners = [
     Services = [
       {
         Name = "frontend"
-        Namespace = "default"
+        Namespace = "ui"
         Hosts = ["*"]
       }
     ]
@@ -105,16 +117,7 @@ EOT
 consul config write - <<< $ingress_config
 
 
-proxy_defaults=$(cat <<EOT
-Kind      = "proxy-defaults"
-Name      = "global"
-Config {
-  envoy_telemetry_collector_bind_socket_dir = "/opt/envoy_stats"
-  protocol = "http"
-}
-EOT
-)
-consul config write - <<< $proxy_defaults
+
 
 collector_defaults=$(cat <<EOT
 Kind      = "service-defaults"

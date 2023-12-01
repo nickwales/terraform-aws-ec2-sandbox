@@ -5,6 +5,10 @@ variable "name" {
   default = ""
 }
 
+variable "service_tags" {
+  type    = list(string)
+  default = [""]
+}
 variable "message" {
   description = "The message fake service will display"
   default = ""
