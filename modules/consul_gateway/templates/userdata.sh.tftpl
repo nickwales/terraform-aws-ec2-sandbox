@@ -92,12 +92,19 @@ EOT
 systemctl restart systemd-resolved
 
 ## Configure Consul Configurations
-
 export CONSUL_HTTP_TOKEN=${consul_token}
 
 
 
 ## Configure the gateways
+
+# Namespace and partition call
+tenancy_command=""
+if [ "${consul_binary}" == "consul-enterprise" ]
+then
+  tenancy_command="-partition=${consul_partition} -namespace=${consul_namespace}"
+fi
+
 # Mesh
 cat <<EOT > /etc/systemd/system/mesh-gateway.service
 [Unit]
@@ -106,7 +113,11 @@ After=syslog.target network.target
 
 [Service]
 Environment=CONSUL_HTTP_TOKEN=${consul_token}
-ExecStart=/usr/bin/consul connect envoy -mesh-gateway -register -address $${INSTANCE_IP}:8443 -wan-address $${INSTANCE_IP}:8443
+ExecStart=/usr/bin/consul connect envoy -mesh-gateway \
+  -register \
+  -address $${INSTANCE_IP}:8443 \
+  -wan-address $${INSTANCE_IP}:8443 \
+  $${tenancy_command}
 ExecStop=/bin/sleep 5
 Restart=always
 
@@ -122,7 +133,11 @@ After=syslog.target network.target
 
 [Service]
 Environment=CONSUL_HTTP_TOKEN=${consul_token}
-ExecStart=/usr/bin/consul connect envoy -gateway ingress -register -admin-bind 127.0.0.1:19001
+ExecStart=/usr/bin/consul connect envoy -gateway \
+  ingress \
+  -register \
+  -admin-bind 127.0.0.1:19001 \
+  $${tenancy_command}
 ExecStop=/bin/sleep 5
 Restart=always
 

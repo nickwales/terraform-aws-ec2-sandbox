@@ -24,8 +24,13 @@ variable "consul_binary" {
   default     = "consul"
 }
 
-variable "partition" {
+variable "consul_partition" {
   description = "The Consul admin partition this agent should be part of"
+  default = "default"
+}
+
+variable "consul_namespace" {
+  description = "The Consul namespace the gateway should be part of"
   default = "default"
 }
 

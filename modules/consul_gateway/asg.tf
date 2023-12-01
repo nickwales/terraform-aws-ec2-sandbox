@@ -46,8 +46,8 @@ resource "aws_launch_template" "consul_gateway" {
     consul_server_count   = var.consul_gateway_count,
     consul_agent_ca       = var.consul_agent_ca,
     consul_binary         = var.consul_binary,
+    consul_partition      = var.consul_partition,
+    consul_namespace      = var.consul_namespace,    
   }))
   vpc_security_group_ids = [aws_security_group.consul_gateway_sg.id]
-  
-
 }
