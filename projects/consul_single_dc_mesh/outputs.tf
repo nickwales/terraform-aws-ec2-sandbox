@@ -7,7 +7,7 @@ output "service_discovery_entrypoint" {
 }
 
 output "service_mesh_entrypoint" {
-  value = "http://${aws_lb.lb.dns_name}"
+  value = "http://${aws_lb.lb.dns_name}/ui/"
 }
 
 output "consul_entrypoint" {
