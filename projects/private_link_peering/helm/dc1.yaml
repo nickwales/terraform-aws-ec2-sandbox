@@ -1,0 +1,50 @@
+# values.yaml
+global:
+  datacenter: dc1
+  image: 'hashicorp/consul:1.18.2'
+  tls:
+    enabled: true
+  peering:
+    enabled: true
+  acls:
+    manageSystemACLs: true
+
+server:
+  replicas: 1
+  bootstrapExpect: 1
+  connect: true
+
+client:
+  grpc: true
+ 
+connectInject:
+  enabled: true
+  default: true
+
+meshGateway:
+  enabled: true
+  replices: 2
+  wanAddress:
+    source: Static
+    static: vpce-048f7ae0f9adee4fe-hxj7h45m.vpce-svc-0051407bb63dfe3f5.us-east-1.vpce.amazonaws.com
+  service:
+    type: LoadBalancer
+    annotations: |
+      service.beta.kubernetes.io/aws-load-balancer-type: "external"
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+      service.beta.kubernetes.io/aws-load-balancer-scheme: "internal"
+      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+
+
+ingressGateways:
+  enabled: true
+  defaults: 
+    service:
+      type: LoadBalancer
+      annotations: |
+        service.beta.kubernetes.io/aws-load-balancer-type: "external"
+        service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+        service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+        service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+
+

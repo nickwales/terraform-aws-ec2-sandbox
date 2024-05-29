@@ -1,0 +1,16 @@
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name: backend
+spec:
+  destination:
+    name: backend
+  sources:
+   - name: frontend
+     action: allow
+     peer: dc1 
+   - name: ingress-gateway
+     action: allow
+   - name: api
+     action: allow
+     peer: dc1

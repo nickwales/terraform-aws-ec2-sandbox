@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: frontend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 9090
+    targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: frontend
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      annotations:
+        'consul.hashicorp.com/connect-inject': 'true'
+        'consul.hashicorp.com/transparent-proxy': 'true'
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: nicholasjackson/fake-service:v0.26.2
+        env: 
+        - name: NAME
+          value: Frontend (In DC1)
+        - name: UPSTREAM_URIS
+          # value: http://cache.virtual.dc2.peer.consul,http://api.virtual.consul
+          value: http://backend.virtual.dc2.peer.consul
+        ports:
+        - containerPort: 9090
+      serviceAccountName: frontend
