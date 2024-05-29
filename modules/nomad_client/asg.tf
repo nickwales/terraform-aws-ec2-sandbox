@@ -56,6 +56,9 @@ resource "aws_launch_template" "nomad_client" {
     consul_partition      = var.consul_partition,
     consul_agent_token    = var.consul_agent_token,
     consul_encryption_key = var.consul_encryption_key,
+    vault_enabled         = var.vault_enabled,
+    vault_addr            = var.vault_addr,
+    vault_jwt_path        = var.vault_jwt_path,
   }))
   vpc_security_group_ids = [aws_security_group.nomad_client.id]
 }

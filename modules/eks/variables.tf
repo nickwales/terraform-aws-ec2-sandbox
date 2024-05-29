@@ -15,3 +15,15 @@ variable "node_group_name" {
 variable "vpc_id" {}
 variable "public_subnets" {}
 variable "private_subnets" {}
+
+variable "desired_size" {
+  default = 2
+}
+
+variable "min_size" {
+  default = 1
+}
+
+variable "max_size" {
+  default = 5
+} 

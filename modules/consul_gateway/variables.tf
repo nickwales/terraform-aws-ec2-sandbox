@@ -17,7 +17,7 @@ variable "consul_token" {
 }
 variable "consul_license" {}
 variable "consul_version" {
-  default = "1.16.2"
+  default = "1.18.1"
 }
 variable "consul_binary" {
   description = "Allows upgrading to Consul Enterprise"

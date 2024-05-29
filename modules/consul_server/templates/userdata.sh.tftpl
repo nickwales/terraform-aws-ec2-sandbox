@@ -84,23 +84,6 @@ systemctl enable consul --now
 
 sleep 10 # Give consul a moment to start up
 
-## If enterprise Configure consul admin partitions
-# if [ ${consul_binary} = "consul-enterprise" ]; then
-#   consul partition create -name global-api
-#   consul partition create -name datastores
-#   consul partition create -name ui
-
-#   consul namespace create -name public -partition ui
-#   consul namespace create -name private -partition ui
-
-#   consul namespace create -name postgres -partition datastores
-#   consul namespace create -name mongo -partition datastores
-#   consul namespace create -name elasticsearch -partition datastores
-
-#   consul namespace create -name secure -partition global-api
-#   consul namespace create -name insecure -partition global-api
-# fi
-
 ## Configure Consul DNS 
 mkdir -p /etc/systemd/resolved.conf.d/
 cat <<EOT > /etc/systemd/resolved.conf.d/consul.conf
@@ -116,48 +99,3 @@ systemctl restart systemd-resolved
 # Setup Consul Gateways
 export CONSUL_HTTP_TOKEN="${consul_token}"
 echo CONSUL_HTTP_TOKEN="${consul_token}" >> /etc/environment
-
-## Give the anonymous policy read access (for DNS and catalog)
-cat <<EOT > /root/anonymous_policy.hcl
-agent_prefix "" {
-  policy = "read"
-}
-node_prefix "" {
-  policy = "read"
-}
-service_prefix "" {
-  policy = "read"
-}
-key_prefix "" {
-  policy = "read"
-}
-EOT
-
-consul acl policy create -name "anonymous-policy" \
-  -description "This is the anonymous policy" \
-  -rules @/root/anonymous_policy.hcl
-
-consul acl token update \
-  -id anonymous \
-  -policy-name anonymous-policy
-
-# Set mesh and peering configurations
-cat <<EOT > /root/mesh.hcl
-Kind = "mesh"
-Peering {
-  PeerThroughMeshGateways = true
-}
-EOT
-consul config write /root/mesh.hcl
-
-cat <<EOT > /root/proxy-defaults.hcl
-Kind = "proxy-defaults"
-Name = "global"
-MeshGateway {
-   Mode = "local"
-}
-EOT
-consul config write /root/proxy-defaults.hcl
-
-
-

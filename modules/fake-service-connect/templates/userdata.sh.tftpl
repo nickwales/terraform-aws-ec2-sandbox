@@ -138,7 +138,7 @@ dns_config {
 }
 
 
-retry_join = ["provider=aws tag_key=role tag_value=consul-server-${consul_datacenter}"]
+retry_join = ["${consul_retry_join}"]
 EOT
 
 systemctl daemon-reload

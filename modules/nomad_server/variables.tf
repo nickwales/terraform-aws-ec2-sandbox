@@ -19,7 +19,7 @@ variable "nomad_token" {
 
 variable "nomad_license" {}
 variable "nomad_version" {
-  default = "1.6.2"
+  default = "1.7.0"
 }
 variable "nomad_binary" {
   description = "Allows upgrading to nomad Enterprise"

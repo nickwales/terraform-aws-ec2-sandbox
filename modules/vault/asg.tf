@@ -1,5 +1,5 @@
 resource "aws_autoscaling_group" "asg" {
-  name                      = "${var.name}-${var.consul_datacenter}"
+  name_prefix               = "${var.name}-vault-${var.consul_datacenter}"
   max_size                  = 3
   min_size                  = 1
   health_check_grace_period = 300
@@ -33,7 +33,7 @@ resource "aws_launch_template" "lt" {
   iam_instance_profile {
     name = aws_iam_instance_profile.profile.name
   }
-  name = "${var.name}-${var.consul_datacenter}"
+  name_prefix = "${var.name}-vault-${var.consul_datacenter}"
   tag_specifications {
     resource_type = "instance"
 
@@ -46,7 +46,10 @@ resource "aws_launch_template" "lt" {
 
   user_data = base64encode(templatefile("${path.module}/templates/userdata.sh.tftpl", { 
     name                  = var.name,
+    service_tags          = jsonencode(var.service_tags),
     message               = local.message,
+    vault_binary          = var.vault_binary,
+    vault_version         = var.vault_version,
     consul_datacenter     = var.consul_datacenter, 
     consul_partition      = var.consul_partition,
     consul_version        = var.consul_version,
@@ -57,7 +60,6 @@ resource "aws_launch_template" "lt" {
     consul_binary         = var.consul_binary,
     consul_namespace      = var.consul_namespace,
     consul_agent_token    = var.consul_agent_token,
-    consul_retry_join     = var.consul_retry_join,
     instance_count        = var.instance_count,
     upstream_uris         = var.upstream_uris,
     app_port              = var.app_port,

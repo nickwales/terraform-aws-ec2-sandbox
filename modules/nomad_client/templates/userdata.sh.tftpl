@@ -8,7 +8,10 @@ wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /etc/apt/trust
 chmod go-w /etc/apt/trusted.gpg.d/hashicorp.gpg
 chmod ugo+r /etc/apt/trusted.gpg.d/hashicorp.gpg
 apt-add-repository -y "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-apt update && apt install -y unzip ${nomad_binary}="${nomad_version}*" ${consul_binary}="${consul_version}*" consul-template hashicorp-envoy haproxy jq net-tools docker.io
+apt update && apt install -y unzip ${nomad_binary}="${nomad_version}*" \
+  ${consul_binary}="${consul_version}*" \
+  consul-template hashicorp-envoy haproxy \
+  jq net-tools docker.io
 
 # Lay down consul certificates
 mkdir -p /etc/consul.d/certs
@@ -110,15 +113,22 @@ client {
 #   verify_https_client    = true
 # }
 
-### Need to enable talking to Consul over TLS 
+### To do: enable talking to Consul over TLS 
 consul {
   token = "${consul_token}" 
 }
+
 acl {
   enabled    = true
   token_ttl  = "30s"
   policy_ttl = "60s"
   role_ttl   = "60s"
+}
+
+vault {
+  enabled   = ${vault_enabled}
+  address   = "${vault_addr}"
+  jwt_auth_backend_path = "${vault_jwt_path}"
 }
 EOT
 

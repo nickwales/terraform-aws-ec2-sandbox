@@ -51,6 +51,20 @@ variable "target_groups" {
   default = [""]
 }
 
+## Vault Configuration
+
+variable "vault_license" {
+  description = "The Consul License Key if using enterprise"
+  default = ""
+}
+
+variable "vault_version" {
+  default = "1.15.4"
+}
+variable "vault_binary" {
+  description = "Should be either 'vault' or 'vault-enterprise'"
+  default     = "vault"
+}
 
 ## Consul configuration
 variable "consul_token" {
@@ -61,8 +75,9 @@ variable "consul_license" {
   description = "The Consul License Key if using enterprise"
   default = ""
 }
+
 variable "consul_version" {
-  default = "1.18.1"
+  default = "1.16.2"
 }
 variable "consul_binary" {
   description = "Should be either 'consul' or 'consul-enterprise'"
@@ -89,10 +104,4 @@ variable "consul_agent_ca" {}
 variable "consul_agent_token" {
   description = "The Consul Agent and Default token"
   default = "root"
-}
-
-variable "consul_retry_join" {
-  description = "How consul clients connect to "
-  default = "[\"provider=aws tag_key=role tag_value=consul-server-$${consul_datacenter}\"]"
-  #default = ""
 }

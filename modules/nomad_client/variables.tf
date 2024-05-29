@@ -18,7 +18,7 @@ variable "nomad_token" {
 }
 
 variable "nomad_version" {
-  default = "1.6.2"
+  default = "1.7.0"
 }
 variable "nomad_binary" {
   description = "Allows upgrading to nomad Enterprise"
@@ -49,9 +49,20 @@ variable "consul_agent_token" {
 variable "consul_encryption_key" {
   default = ""
 }
-
 variable "datacenter" {
   default = "dc1"
+}
+
+## Vault
+variable "vault_enabled" {
+  default = true
+}
+variable "vault_addr" {
+  default = "http://vault.service.consul:8200"
+}
+
+variable "vault_jwt_path" {
+  default = "jwt"
 }
 
 variable "nomad_client_count" {

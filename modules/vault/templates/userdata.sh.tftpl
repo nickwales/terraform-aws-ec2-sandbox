@@ -8,14 +8,7 @@ wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /etc/apt/trust
 chmod go-w /etc/apt/trusted.gpg.d/hashicorp.gpg
 chmod ugo+r /etc/apt/trusted.gpg.d/hashicorp.gpg
 apt-add-repository -y "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-apt update && apt install -y unzip ${consul_binary}="${consul_version}*" consul-template hashicorp-envoy haproxy jq net-tools
-
-# Install fake-service
-mkdir -p /opt/fake-service
-wget https://github.com/nicholasjackson/fake-service/releases/download/v0.26.0/fake_service_linux_amd64.zip
-unzip -od /opt/fake-service/ fake_service_linux_amd64.zip
-rm -f fake_service_linux_amd64.zip
-chmod +x /opt/fake-service/fake-service
+apt update && apt install -y unzip ${consul_binary}="${consul_version}*" consul-template hashicorp-envoy haproxy jq net-tools ${vault_binary}="${vault_version}*" uuid
 
 # Lay down consul certificates
 mkdir -p /etc/consul.d/certs
@@ -25,49 +18,6 @@ echo "${consul_agent_ca}" > /etc/consul.d/certs/consul-agent-ca.pem
 echo "CONSUL_HTTP_TOKEN=${consul_token}" >> /etc/environment
 echo "CONSUL_HTTP_ADDR=https://127.0.0.1:8501" >> /etc/environment
 echo "CONSUL_HTTP_SSL_VERIFY=false" >> /etc/environment
-
-cat <<EOT > "/etc/systemd/system/${name}.service"
-[Unit]
-Description=${name}
-After=syslog.target network.target
-
-[Service]
-Environment=NAME="${name} in ${consul_datacenter}"
-Environment=MESSAGE="${message}"
-Environment=LISTEN_ADDR="0.0.0.0:${app_port}"
-Environment=UPSTREAM_URIS="${upstream_uris}"
-ExecStart=/opt/fake-service/fake-service
-ExecStop=/bin/sleep 5
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOT
-
-
-cat <<EOT > /etc/consul.d/${name}.hcl
-service {
-  name = "${name}"
-  port = ${app_port}
-  tags = ${service_tags}
-  meta = {
-    product = "${name}"
-    version = "4.8.1"
-    owner   = "${name}-team@acme.com"
-  } 
-
-  checks = [
-    {
-      name = "HTTP check on port ${app_port}"
-      http = "http://127.0.0.1:${app_port}/health"
-      interval = "10s"
-      timeout = "5s"
-    }
-  ]
-  token = "${consul_token}"
-  namespace = "${consul_namespace}"
-}
-EOT
 
 systemctl daemon-reload
 systemctl enable ${name} --now
@@ -85,9 +35,7 @@ server = false
 advertise_addr = "$${INSTANCE_IP}"
 bind_addr = "{{ GetDefaultInterfaces | exclude \"type\" \"IPv6\" | attr \"address\" }}"
 client_addr = "0.0.0.0"
-ui_config {
-  enabled = true
-}
+ui = true
 
 telemetry {
   prometheus_retention_time = "10m"
@@ -124,7 +72,7 @@ ports = {
   grpc_tls = 8503
 }
 
-retry_join = ${consul_retry_join}
+retry_join = ["provider=aws tag_key=role tag_value=consul-server-${consul_datacenter}"]
 EOT
 
 systemctl daemon-reload
@@ -140,3 +88,31 @@ Domains=~consul
 EOT
 
 systemctl restart systemd-resolved
+
+## Vault
+
+NODE_ID=$(uuid)
+
+cat <<EOT > /etc/vault.d/vault.hcl
+ui            = true
+cluster_addr  = "http://$${INSTANCE_IP}:8201"
+api_addr      = "http://$${INSTANCE_IP}:8200"
+disable_mlock = true
+
+storage "raft" {
+  path = "/opt/vault/data"
+  node_id = "$${NODE_ID}"
+}
+
+
+listener "tcp" {
+  address       = "0.0.0.0:8200"
+  tls_disable   = "true"
+}
+
+service_registration "consul" {
+  address      = "127.0.0.1:8500"
+}
+EOT
+
+systemctl enable vault --now

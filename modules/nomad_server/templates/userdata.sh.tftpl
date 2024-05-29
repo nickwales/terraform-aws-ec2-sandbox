@@ -8,7 +8,10 @@ wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /etc/apt/trust
 chmod go-w /etc/apt/trusted.gpg.d/hashicorp.gpg
 chmod ugo+r /etc/apt/trusted.gpg.d/hashicorp.gpg
 apt-add-repository -y "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-apt update && apt install -y unzip ${nomad_binary}="${nomad_version}*" ${consul_binary}="${consul_version}*" consul-template hashicorp-envoy haproxy jq net-tools
+apt update && apt install -y \
+  ${nomad_binary}="${nomad_version}*" \
+  ${consul_binary}="${consul_version}*" \
+  jq net-tools unzip
 
 # Lay down consul certificates
 mkdir -p /etc/consul.d/certs
@@ -18,7 +21,6 @@ echo "${consul_ca_file}" > /etc/consul.d/certs/consul-agent-ca.pem
 echo "CONSUL_HTTP_TOKEN=${consul_token}" >> /etc/environment
 echo "CONSUL_HTTP_ADDR=https://127.0.0.1:8501" >> /etc/environment
 echo "CONSUL_HTTP_SSL_VERIFY=false" >> /etc/environment
-
 
 # Configure Consul and start it up
 echo CONSUL_LICENSE=${consul_license} >> /etc/consul.d/consul.env
@@ -121,12 +123,35 @@ acl {
   policy_ttl = "60s"
   role_ttl   = "60s"
 }
+
+vault {
+  enabled = true
+
+  default_identity {
+    aud = ["vault.io"]
+    env  = false
+    file = true    
+    ttl = "1h"
+  }
+}
+
+consul {
+  service_identity {
+    aud = ["consul.io"]
+    ttl = "1h"
+  }
+
+  task_identity {
+    aud = ["consul.io"]
+    ttl = "1h"
+  }
+}
 EOT
 
 echo ${nomad_bootstrap_token} > /root/bootstrap.token
-
+echo "NOMAD_TOKEN=${nomad_bootstrap_token}" > /etc/environment
 systemctl enable nomad --now
 
-sleep 15 # could replace this with a wait script?
+sleep 15 # could replace this with a wait script
 nomad acl bootstrap /root/bootstrap.token
 

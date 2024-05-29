@@ -63,7 +63,7 @@ variable "consul_license" {
   default = ""
 }
 variable "consul_version" {
-  default = "1.16.2"
+  default = "1.18.1"
 }
 variable "consul_binary" {
   description = "Should be either 'consul' or 'consul-enterprise'"
@@ -86,3 +86,9 @@ variable "consul_encryption_key" {
   default = "P4+PEZg4jDcWkSgHZ/i3xMuHaMmU8rx2owA4ffl2K8w="
 }
 variable "consul_agent_ca" {}
+
+variable "consul_retry_join" {
+  description = "How consul clients connect to "
+  default = "[\"provider=aws tag_key=role tag_value=consul-server-$${consul_datacenter}\"]"
+  #default = ""
+}
