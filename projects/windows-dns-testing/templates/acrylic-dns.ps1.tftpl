@@ -1,0 +1,156 @@
+<powershell>
+# Configure firewall rules
+netsh advfirewall set publicprofile state off
+
+$CONSUL_PATH="C:\consul"
+$CONSUL_BIN_PATH="$CONSUL_PATH\bin"
+$CONSUL_CONFIG_PATH="$CONSUL_PATH\conf"
+$CONSUL_DATA_PATH="$CONSUL_PATH\data"
+$CONSUL_LOG_PATH="$CONSUL_PATH\consul.log"
+
+
+## Clean up previous installations
+#Remove-Item $CONSUL_PATH -Recurse -Force
+
+New-Item -ItemType directory -Path $CONSUL_PATH
+New-Item -ItemType directory -Path $CONSUL_BIN_PATH
+New-Item -ItemType directory -Path $CONSUL_CONFIG_PATH
+New-Item -ItemType directory -Path $CONSUL_DATA_PATH
+
+# Download and install Consul
+Invoke-WebRequest -Uri "https://releases.hashicorp.com/consul/${consul_version}/consul_${consul_version}_windows_amd64.zip" -OutFile "C:\consul.zip"
+Expand-Archive C:\consul.zip -DestinationPath C:\
+
+Move-Item -Path C:\consul.exe -Destination C:\consul\bin\
+$env:path += ";C:\consul\bin\"
+
+
+$consulConfig= @"
+data_dir = "C:\\consul\\data\\"
+log_level = "DEBUG"
+server = true
+bootstrap_expect = 1
+ui_config {
+  enabled = true
+}
+dns_config {
+  use_cache = true
+  service_ttl {
+    "*" = "3s"
+  }
+}
+client_addr = "0.0.0.0"
+acl {
+  enabled = true
+  default_policy = "deny"
+  enable_token_persistence = true
+  tokens {
+    initial_management = "${consul_token}"
+    agent = "${consul_token}"
+  }
+}
+
+retry_join = ["provider=aws tag_key=role tag_value=consul-server"]
+"@
+
+Set-Content "C:\consul\conf\config.hcl" $consulConfig
+
+$consulServiceParams = @{
+  Name = "Consul"
+  BinaryPathName = "C:\consul\bin\consul.exe agent -config-dir C:\consul\conf\"
+  DisplayName = "Consul"
+  StartupType = "Automatic"
+  Description = "Consul - A service mesh solution"
+}
+
+New-Service @consulServiceParams
+Start-Service -Name Consul
+Start-Sleep 10
+
+$readOnlyPolicy = @"
+agent_prefix \"\" {
+  policy = \"read\"
+}
+node_prefix \"\" {
+  policy = \"read\"
+}
+service_prefix \"\" {
+  policy = \"read\"
+}
+key_prefix \"\" {
+  policy = \"read\"
+}
+"@
+
+Set-Content "C:\consul_token" "${consul_token}"
+$Env:CONSUL_HTTP_TOKEN = "${consul_token}"
+
+C:\consul\bin\consul.exe acl policy create -name "read-only" -description "Read Only Policy" `
+-rules $readOnlyPolicy
+
+C:\consul\bin\consul.exe  acl token update `
+  -id anonymous `
+  -policy-name read-only
+
+
+## Install Acrylic DNS Service
+Invoke-WebRequest -Uri "https://cytranet.dl.sourceforge.net/project/acrylic/Acrylic/2.1.1/Acrylic.exe" -OutFile "C:\acrylic.exe"
+Start-Process -FilePath "C:\acrylic.exe" -ArgumentList "/S /v/qn"
+
+Start-Sleep -s 30
+
+$dnsServerAddr = Get-DnsClientServerAddress -InterfaceAlias Ethernet -AddressFamily IPv4 |select -ExpandProperty serveraddresses
+
+## Save external DNS record to file
+Set-Content "C:\dnsserver.txt" $dnsServerAddr 
+
+$acrylicConfig = @"
+[GlobalSection]
+PrimaryServerAddress=127.0.0.1
+PrimaryServerPort=8600
+PrimaryServerProtocol=UDP
+PrimaryServerDomainNameAffinityMask=*.consul
+IgnoreFailureResponsesFromPrimaryServer=Yes
+IgnoreNegativeResponsesFromPrimaryServer=Yes
+SecondaryServerAddress=$dnsServerAddr
+SecondaryServerPort=53
+SecondaryServerProtocol=UDP
+IgnoreFailureResponsesFromSecondaryServer=No
+IgnoreNegativeResponsesFromSecondaryServer=No
+SinkholeIPv6Lookups=No
+ForwardPrivateReverseLookups=No
+AddressCacheFailureTime=0
+AddressCacheNegativeTime=0
+AddressCacheScavengingTime=1
+AddressCacheSilentUpdateTime=1
+AddressCachePeriodicPruningTime=60
+AddressCacheInMemoryOnly=Yes
+AddressCacheDisabled=No
+LocalIPv4BindingAddress=0.0.0.0
+LocalIPv4BindingPort=53
+GeneratedResponseTimeToLive=300
+ServerUdpProtocolResponseTimeout=4999
+ServerTcpProtocolResponseTimeout=4999
+ServerTcpProtocolInternalTimeout=2477
+HitLogFileName=%TEMP%\AcrylicDNSProxyHitLog.%DATE%.txt
+HitLogFileWhat=XHCF
+HitLogFullDump=Yes
+HitLogMaxPendingHits=512
+[AllowedAddressesSection]
+IP1=*
+"@
+
+Set-Content "C:\Program Files (x86)\Acrylic DNS Proxy\AcrylicConfiguration.ini" $acrylicConfig
+Restart-Service -Name AcrylicDNSProxySvc
+
+$dnsServerInterface = Get-DnsClientServerAddress -InterfaceAlias Ethernet -AddressFamily IPv4 |select -ExpandProperty InterfaceIndex
+Set-DnsClientServerAddress -InterfaceIndex $dnsServerInterface –ServerAddresses ("127.0.0.1")
+
+## Install YodaDNS
+Invoke-WebRequest https://www.yogadns.com/download/YogaDNSSetup.exe -o YogaDNSSetup.exe
+Start-Process -FilePath "C:\YogaDNSSetup.exe" -ArgumentList "/S /v/qn"
+
+
+Invoke-WebRequest https://github.com/gsass1/NTop/releases/download/v0.3.4/ntop.exe -o ntop.exe
+
+</powershell>
