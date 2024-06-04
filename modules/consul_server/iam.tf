@@ -61,8 +61,8 @@ resource "aws_iam_role_policy" "consul_server_backup" {
               "s3:ListMultipartUploadParts"
           ],
           "Resource": [
-              "arn:aws:s3:::${var.name}-consul-backup/*",
-              "arn:aws:s3:::${var.name}-consul-backup"
+              "${aws_s3_bucket.consul-backup-bucket.arn}/*",
+              "${aws_s3_bucket.consul-backup-bucket.arn}"
           ]
         }
       ]
