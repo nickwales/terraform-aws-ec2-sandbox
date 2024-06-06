@@ -29,7 +29,7 @@ variable "consul_license" {
 variable "nomad_license" {
   default = ""
 }
-variable "nomad_bootstrap_token" {}
+#variable "nomad_bootstrap_token" {}
 variable "datacenter" {
   default = "dc1"
 }
