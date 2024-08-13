@@ -8,14 +8,7 @@ consul tls ca create
 mkdir certs
 mv *.pem certs/
 ```
-### Deploy the infrastructure
-```
-terraform apply -auto-approve
-```
-### Update k8s cli
-```
-aws eks update-kubeconfig --name k8s-server-vm-clients --region us-east-1 --alias k8s-server-vm-clients
-```
+
 
 ### Create the consul namespace and deploy certificates
 ```
