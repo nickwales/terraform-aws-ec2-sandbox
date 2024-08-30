@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consul-esm
+  namespace: default
+  labels:
+    app: consul-esm
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: consul-esm
+  template:
+    metadata:
+      labels:
+        app: consul-esm
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8080'
+        prometheus.io/path: /metrics
+        ad.datadoghq.com/consul-esm.checks: |
+          {
+            "openmetrics": {
+              "init_config": {},
+              "instances": [
+                {
+                  "openmetrics_endpoint": "http://%%host%%:%%port%%/metrics",
+                  "namespace": "consulesm",
+                  "metrics": [".*"]
+                }
+              ]
+            }
+          }
+    spec:
+      containers:
+        - name: consul-esm
+          image: hashicorp/consul-esm:0.7.2
+          ports:
+          - containerPort: 8080          
+          env:
+          args:
+            - "-config-file=/consul-esm/config/config.hcl"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "64Mi"
+            requests:
+              cpu: "250m"
+              memory: "33Mi"
+          volumeMounts:
+            - name: config
+              mountPath: /consul-esm/config
+      volumes:
+        - name: config
+          configMap:
+            name: consul-esm-config

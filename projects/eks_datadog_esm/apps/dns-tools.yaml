@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dns-tools
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns-tools
+spec:
+  selector:
+    app: dns-tools
+  ports:
+    - port: 9090
+      targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dns-tools
+  labels:
+    app: dns-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dns-tools
+  template:
+    metadata:
+      labels:
+        app: dns-tools
+    spec:
+      containers:
+        - name: dns-tools
+          image: toolbelt/dig:2024-07-23
+          ports:
+            - containerPort: 9090
+          env:
+            - name: 'LISTEN_ADDR'
+              value: '0.0.0.0:9090'
+            - name: 'NAME'
+              value: 'dns-tools'
+            - name: 'MESSAGE'
+              value: 'I am the dns-tools'
+            - name: 'UPSTREAM_URIS'
+              value: 'http://api.service.consul:9090'
