@@ -19,3 +19,6 @@ This configures Consul with
 - An HTTP listener and routing for the API Gateway.
 
 This should be run after the infrastructure is deployed with `./post_deploy.sh`.
+
+
+Use the `./undeploy.sh` script to tear everything down.
