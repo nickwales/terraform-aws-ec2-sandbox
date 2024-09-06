@@ -1,0 +1,20 @@
+#!/bin/sh
+
+wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+sudo apt update
+sudo apt install nomad="${nomad_version}-1"
+
+cat <<EOT > /etc/nomad.d/nomad.hcl
+data_dir = "/opt/nomad"
+bind_addr = "0.0.0.0"
+client {
+  enabled = true
+  server_join {
+        retry_join = ["provider=aws tag_key=Name tag_value=${name}-server"]
+  }
+}
+EOT
+
+systemctl restart nomad

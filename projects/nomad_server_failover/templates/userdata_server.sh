@@ -1,0 +1,64 @@
+#!/bin/sh
+
+## Get instance IP from cloud-init (replace with VM IP when appropriate)
+INSTANCE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
+CONSUL_HTTP_TOKEN="${consul_token}"
+
+## Install keys, repos and packages
+wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/hashicorp.gpg
+chmod go-w /etc/apt/trusted.gpg.d/hashicorp.gpg
+chmod ugo+r /etc/apt/trusted.gpg.d/hashicorp.gpg
+
+apt-add-repository -y "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+
+apt update && apt install -y unzip nomad-enterprise jq docker.io net-tools
+
+
+
+
+
+cat <<EOT >> /opt/nomad/license.hclic
+02MV4UU43BK5HGYYTOJZWFQMTMNNEWU33JJ5CES6CZGJKTKT2XIV2E6RCFPJGVGMD2J5KGI22MKRIXQTLKLF2FU3KRGNHFI2DIJZVGY2K2KRBGYSLJO5UVSM2WPJSEOOLULJMEUZTBK5IWST3JJF5E4V2RGVMVIRJSLJBTAMSOK5CXSTCULF5E26SFORHVI2DKJV4TANKPI5MTGTSEMRWFSMSJPJGTEULJJRBUU4DCNZHDAWKXPBZVSWCSOBRDENLGMFLVC2KPNFEXCSLJO5UWCWCOPJSFOVTGMRDWY5C2KNETMSLKJF3U22SFORGVIRLUJVCGQVKNKRTTMTKEMM3E26SVOVHFIVJUJVKGGMSOKRITIV3JJFZUS3SOGBMVQSRQLAZVE4DCK5KWST3JJF4U2RCJPBGFIRLYJRKECNCWIRAXOT3KIF3U62SBO5LWSSLTJFWVMNDDI5WHSWKYKJYGEMRVMZSEO3DULJJUSNSJNJEXOTLKKV2E2VCFORGUI2CVJVCECNSNIRATMTKEIJQUS2LXNFSEOVTZMJLWY5KZLBJHAYRSGVTGIR3MORNFGSJWJFVES52NNJKXITKUIV2E2RDIKVGUIQJWJVCECNSNIRBGCSLJO5UWGSCKOZNEQVTKMRBUSNSJNU2XMYSXIZVUS2LXNFNG26DILIZU22KPNZZWSYSXHFVWIV3YNRRXSSJWK54UU3TCGNNGYY3NGVUGE3KONRGFQQTWMJDWY2TFKNFGIZSYGA6S4VLNGFSGSNSMKJ3WUVDCI43G2ZSKJJEHGSKENJZVUQZPJYZW6TKDKU4TGUDPOJBVMMTVMJHGS3LGN5AS62STJEYGI6TVF5VXG4TNOJJE24TYKFXHU6TWOFTESK3MJRIDO4TON5KEG4BRMRAWWY3BGRSFMMBTGM4FA53NKZWGC5SKKA2HASTYJFETSRBWKVDEYVLBKZIGU22XJJ2GGRBWOBQWYNTPJ5TEO3SLGJ5FAS2KKJWUOSCWGNSVU53RIZSSW3ZXNMXXGK2BKRHGQUC2M5JS6S2WLFTS6SZLNRDVA52MG5VEE6CJG5DU6YLLGZKWC2LBJBXWK2ZQKJKG6NZSIRIT2PI
+EOT
+
+rm /etc/nomad.d/nomad.hcl
+cat <<EOT >> /etc/nomad.d/nomad.hcl
+bind_addr = "0.0.0.0"
+data_dir  = "/opt/nomad/data"
+
+server {
+  enabled          = true
+  bootstrap_expect = 1
+  license_path = "/opt/nomad/license.hclic"
+}
+
+plugin "docker" {
+  config {
+    allow_privileged = true
+    volumes {
+      enabled = true
+    }
+  }
+}
+
+client {
+  enabled = false
+  node_class = "server" 
+}
+
+telemetry {
+  prometheus_metrics = true
+}
+
+EOT
+
+
+
+systemctl daemon-reload
+
+systemctl enable nomad --now
+
+
+
+
+curl -X POST -d '{"BootstrapSecret": "2b778dd9-f5f1-6f29-b4b4-9a5fa948757a"}' http://localhost:4646/v1/acl/bootstrap%  

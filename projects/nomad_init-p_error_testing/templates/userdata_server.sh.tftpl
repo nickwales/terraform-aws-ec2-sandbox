@@ -1,0 +1,44 @@
+#!/bin/sh
+
+wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+sudo apt update
+sudo apt install nomad="${nomad_version}-1"
+
+cat <<EOT > /etc/nomad.d/nomad.hcl
+data_dir = "/opt/nomad"
+
+# Enable the server
+server {
+  enabled = true
+  bootstrap_expect = 1
+}
+EOT
+
+systemctl restart nomad
+
+cat <<EOT > /root/sleep.hcl
+job "sleep" {
+  type = "batch"
+
+  group "sleep" {
+
+    constraint {
+      operator  = "distinct_hosts"
+      value     = "true"
+    }
+
+    count = 2
+
+    task "sleep" {
+      driver = "exec"
+
+      config {
+        command  = "sleep"
+        args = ["10"]
+      }
+    }
+  }
+}
+EOT
