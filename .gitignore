@@ -3,3 +3,4 @@ terraform*
 *hclic
 *.pem
 *vault-creds.json
+*certs/*
