@@ -41,33 +41,6 @@ resource "consul_config_entry" "http_route_api_gateway" {
             Method = ""
             Path = {
               Match = "prefix"
-              Value = "/poop"
-            }
-            Query = null
-          }
-        ]
-        Services = [
-          {
-            Name = "backend"
-            Weight = 1
-            Filters = {
-              Headers = null
-              URLRewrite = null
-            }
-          }
-        ]
-      },
-      {
-        Filters = {
-          Headers = null,
-          URLRewrite = null
-        }
-        Matches = [
-          {
-            Headers = null
-            Method = ""
-            Path = {
-              Match = "prefix"
               Value = "/"
             }
             Query = null
