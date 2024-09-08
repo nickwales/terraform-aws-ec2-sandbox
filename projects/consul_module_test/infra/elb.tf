@@ -46,6 +46,7 @@ resource "aws_lb_target_group" "consul_https" {
   vpc_id      = module.vpc.vpc_id
 }
 
+
 resource "aws_lb_listener" "gateway" {
   load_balancer_arn = aws_lb.lb.arn
   port              = 80
@@ -59,7 +60,26 @@ resource "aws_lb_listener" "gateway" {
 
 resource "aws_lb_target_group" "gateway" {
   name        = "${var.name}-${var.datacenter}-gateway"
-  port        = 8080
+  port        = 8081
+  protocol    = "TCP"
+  vpc_id      = module.vpc.vpc_id
+}
+
+
+resource "aws_lb_listener" "nomad" {
+  load_balancer_arn = aws_lb.lb.arn
+  port              = 4646
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.nomad.arn
+  }
+}
+
+resource "aws_lb_target_group" "nomad" {
+  name        = "${var.name}-${var.datacenter}-nomad"
+  port        = 4646
   protocol    = "TCP"
   vpc_id      = module.vpc.vpc_id
 }

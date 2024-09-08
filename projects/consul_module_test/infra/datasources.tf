@@ -10,3 +10,7 @@ data "local_file" "consul_server_cert" {
 data "local_file" "consul_agent_ca" {
   filename = "${path.module}/certs/consul-agent-ca.pem"
 }
+
+data "local_file" "nomad_bootstrap_token" {
+  filename = "${path.module}/certs/nomad_bootstrap_token"
+}

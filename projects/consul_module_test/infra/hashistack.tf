@@ -22,64 +22,53 @@ module "consul_server" {
 }
 
 
-
-module "aws-fake-service" {
-  source  = "app.terraform.io/nickwales/aws-fake-service/module"
-  version = "0.0.4"
-  
-  vpc_id = module.vpc.vpc_id
-  region = var.region
-
-  private_subnets = module.vpc.private_subnets
+module "nomad_server_dc1" {
+  source  = "app.terraform.io/nickwales/aws-nomad-server/module"
+  version = "0.0.5"
 
   name  = var.name
   owner = var.owner
-  fake_service_name = "test"
-  fake_service_message = "message"
-
-  consul_agent_ca       = data.local_file.consul_agent_ca.content
-  consul_license        = var.consul_license
-  consul_binary         = var.consul_binary 
-  consul_encryption_key = var.consul_encryption_key  
-}
-
-module "aws-consul-gateway" {
-  source  = "app.terraform.io/nickwales/aws-consul-gateway/module"
-  version = "0.0.9"
-  
   vpc_id = module.vpc.vpc_id
   region = var.region
+  datacenter = "dc1"
 
-  private_subnets = module.vpc.private_subnets
   public_subnets  = module.vpc.public_subnets
+  private_subnets = module.vpc.private_subnets
 
-  name  = var.name
-  owner = var.owner
-
-  consul_agent_ca       = data.local_file.consul_agent_ca.content
-  consul_license        = var.consul_license
-  consul_binary         = var.consul_binary 
+  consul_ca_file = data.local_file.consul_agent_ca.content
+  consul_binary  = var.consul_binary
   consul_encryption_key = var.consul_encryption_key
 
-  target_groups = [aws_lb_target_group.gateway.arn]
+  nomad_bootstrap_token = data.local_file.nomad_bootstrap_token.content
+
+  key_file  = data.local_file.consul_server_key.content
+  cert_file = data.local_file.consul_server_cert.content
+  ca_file   = data.local_file.consul_agent_ca.content
+
+  target_groups = [aws_lb_target_group.nomad.arn]
 }
 
-module "aws-fake-service-connect" {
-  source  = "app.terraform.io/nickwales/aws-fake-service-connect/module"
-  version = "0.0.3"
-
-  vpc_id = module.vpc.vpc_id
-  region = var.region
-
-  private_subnets = module.vpc.private_subnets
+module "nomad_client_dc1" {
+  source  = "app.terraform.io/nickwales/aws-nomad-client/module"
+  version = "0.0.5"
 
   name  = var.name
   owner = var.owner
-  fake_service_name = "test-mesh"
-  fake_service_message = "message"
+  vpc_id = module.vpc.vpc_id
+  region = var.region
+  datacenter = "dc1"
 
-  consul_agent_ca       = data.local_file.consul_agent_ca.content
-  consul_license        = var.consul_license
-  consul_binary         = var.consul_binary 
-  consul_encryption_key = var.consul_encryption_key  
+  nomad_client_count = 2
+
+  public_subnets  = module.vpc.public_subnets
+  private_subnets = module.vpc.private_subnets
+
+  consul_ca_file = data.local_file.consul_agent_ca.content
+  consul_encryption_key = var.consul_encryption_key
+
+  ca_file   = data.local_file.consul_agent_ca.content
+  key_file  = ""
+  cert_file = ""
+
+  target_groups = [aws_lb_target_group.gateway.arn]
 }
