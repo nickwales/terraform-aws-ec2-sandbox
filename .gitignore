@@ -4,3 +4,4 @@ terraform*
 *.pem
 *vault-creds.json
 *certs/*
+*bootstrap_token
