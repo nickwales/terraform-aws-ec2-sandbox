@@ -9,7 +9,7 @@ if ! [ -d infra/certs ]; then
   mkdir infra/certs
   mv *.pem infra/certs
   consul keygen > infra/certs/encryption_key
-  uuidgen='uuidgen | tr "[:upper:]" "[:lower:]"' > infra/certs/nomad_bootstrap_token
+  uuidgen | tr "[:upper:]" "[:lower:]" > infra/certs/nomad_bootstrap_token
 else
   echo "Certificates directory does exist, moving on..."
 fi
