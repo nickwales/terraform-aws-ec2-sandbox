@@ -17,6 +17,9 @@ output "dc1_application_lb" {
   value = "http://${aws_lb.lb_dc1.dns_name}/ui"
 }
 
+output "dc1_nomad_token" {
+  value = data.local_file.nomad_bootstrap_token_dc1.content
+}
 
 # output "dc2_consul_token" {
 #   value = module.consul_server_dc2.consul_token
