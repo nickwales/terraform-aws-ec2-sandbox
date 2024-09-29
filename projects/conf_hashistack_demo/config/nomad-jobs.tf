@@ -42,16 +42,16 @@ resource "nomad_job" "redis" {
 }
 
 
-resource "nomad_job" "backend_database" {
-  jobspec = file("${path.module}/jobs/backend_database.nomad.hcl")
+# resource "nomad_job" "backend_database" {
+#   jobspec = file("${path.module}/jobs/backend_database.nomad.hcl")
 
-  hcl2 {
-    vars = {
-      "job_region" = var.job_region
-      "partition"  = "database"
-    }
-  }
-}
+#   hcl2 {
+#     vars = {
+#       "job_region" = var.job_region
+#       "partition"  = "database"
+#     }
+#   }
+# }
 
 resource "nomad_job" "database" {
   jobspec = file("${path.module}/jobs/database.nomad.hcl")

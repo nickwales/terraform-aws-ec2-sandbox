@@ -61,19 +61,18 @@ resource "consul_config_entry" "redis_intention" {
   ]
 }
 
-resource "consul_config_entry" "backend_intention_database_ap" {
+resource "consul_config_entry" "database_intention_default_ap" {
   kind = "service-intentions"
-  name = "backend"
-  partition = "database"
+  name = "database"
 
   config_json = jsonencode({
     Expose = false
     Sources = [
       {
         Action     = "allow"
-        Name       = "frontend"
+        Name       = "backend"
         Partition  = "default"
-        Namespace = "default"
+        Namespace  = "default"
         Precedence = 9
         Type       = "consul"
       }
@@ -97,6 +96,8 @@ resource "consul_config_entry" "database_intention" {
       {
         Action     = "allow"
         Name       = "backend"
+        Partition  = "default"
+        Namespace  = "default"
         Precedence = 9
         Type       = "consul"
       }
@@ -109,29 +110,29 @@ resource "consul_config_entry" "database_intention" {
 
 
 ## Enables intra sameness group communications
-resource "consul_config_entry" "failover_sg_intention_default_ap" {
-  kind      = "service-intentions"
-  name      = "failover"
+# resource "consul_config_entry" "failover_sg_intention_default_ap" {
+#   kind      = "service-intentions"
+#   name      = "failover"
 
-  config_json = jsonencode({
-    Expose = false
-    Sources = [
-      {
-        Action     = "allow"
-        Name       = "backend"
-        Precedence = 9
-        Type       = "consul"
-      }
-    ]
-  })
-  depends_on = [
-    consul_config_entry.proxy_defaults
-  ]
-}
+#   config_json = jsonencode({
+#     Expose = false
+#     Sources = [
+#       {
+#         Action     = "allow"
+#         Name       = "backend"
+#         Precedence = 9
+#         Type       = "consul"
+#       }
+#     ]
+#   })
+#   depends_on = [
+#     consul_config_entry.proxy_defaults
+#   ]
+# }
 
 # resource "consul_config_entry" "failover_sg_intention_database_ap" {
 #   kind      = "service-intentions"
-#   name      = "failover"
+#   name      = "database"
 
 #   partition = "database"
 
@@ -141,7 +142,7 @@ resource "consul_config_entry" "failover_sg_intention_default_ap" {
 #       {
 #         Action     = "allow"
 #         Name       = "backend"
-#         Partition  = "database"
+#         Partition  = "default"
 #         Namespace  = "default"
 #         Precedence = 9
 #         Type       = "consul"

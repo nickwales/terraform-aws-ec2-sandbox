@@ -8,6 +8,15 @@ resource "consul_config_entry" "exported_services_default" {
 
     Services = [
       {
+        Name      = "database"
+        Namespace = "default"
+        Consumers = [
+          {
+            SamenessGroup = "failover"
+          }
+        ]
+      },      
+      {
         Name      = "backend"
         Namespace = "default"
         Consumers = [

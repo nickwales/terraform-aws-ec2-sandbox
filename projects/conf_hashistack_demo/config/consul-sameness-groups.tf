@@ -1,6 +1,6 @@
 resource "consul_config_entry" "sameness_group_default" {
-  kind = "sameness-group"
-  name = "failover"  
+  kind      = "sameness-group"
+  name      = "failover"  
   partition = "default"     
 
   config_json = jsonencode({
@@ -8,7 +8,6 @@ resource "consul_config_entry" "sameness_group_default" {
     DefaultForFailover = true
     IncludeLocal       = true
     Members = [
-      # { Peer = "${var.peer}" },
       { Partition = "database" }
     ]
   })
