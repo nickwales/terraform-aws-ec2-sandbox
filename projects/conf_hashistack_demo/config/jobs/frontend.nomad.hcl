@@ -11,13 +11,19 @@ variable "partition" {
 job "frontend" {
   type = "service"
 
+
+  constraint {
+    operator  = "distinct_hosts"
+    value     = "true"
+  }
+
   constraint {
     attribute = "${attr.consul.partition}"
     value     = var.partition
   }
 
   group "frontend" {
-    count = 1
+    count = 3
 
     constraint {
       operator  = "distinct_hosts"
