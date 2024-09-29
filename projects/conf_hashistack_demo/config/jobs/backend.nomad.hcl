@@ -69,7 +69,7 @@ job "backend" {
       env {
         NAME = "Backend in partition: default"
         HEALTH_CHECK_RESPONSE_CODE = 200
-        UPSTREAM_URIS = "http://redis.virtual.consul,http://database.service.test.sg.consul"     
+        UPSTREAM_URIS = "http://redis.virtual.consul,http://database.virtual.consul"     
       }
       
       template {
