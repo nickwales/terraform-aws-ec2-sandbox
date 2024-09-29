@@ -3,11 +3,10 @@
 This project deploys Nomad and Consul clusters to showcase the tight integration between the two.
 
 Highlights include 
-- The API gateway 
-- Use of the transparent proxy 
-- Sameness groups to provide failover for the database
-- Locality aware routing. The backend will only mkae requests to a local redis instance. 
-- 
+- The API gateway provides the entry to our mesh services.
+- Use of the transparent proxy for all connectivity. 
+- Sameness groups to provide failover for the database to another partition
+- Locality aware routing. The backend will only make requests to a local redis instance. 
 
 
 ### Deploying 
@@ -29,7 +28,8 @@ This should be created with the `./deploy_infra.sh` command.
 This deploys Nomad jobs and Consul configurations with 
 - An HTTP listener and routing for the API Gateway.
 - Frontend, Backend, Redis and Database services.
-
+- Intentions
+- Locality configuration for the backend
 
 This should be run after the infrastructure is deployed and available with `./post_deploy.sh`.
 
