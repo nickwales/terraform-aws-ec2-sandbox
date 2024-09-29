@@ -3,10 +3,10 @@
 This project deploys Nomad and Consul clusters to showcase the tight integration between the two.
 
 Highlights include 
-- The API gateway provides the entry to our mesh services.
-- Use of the transparent proxy for all connectivity. 
-- Sameness groups to provide failover for the database to another partition
-- Locality aware routing. The backend will only make requests to a local redis instance. 
+- The API gateway provides the entrypoint to our mesh services.
+- Use of the transparent proxy for all connectivity, `<service>.virtual.consul`.
+- Sameness groups to provide automatic discovery of the database in another partition
+- Locality aware routing. The backend will default to making requests to a redis instance in the same AZ.
 
 
 ### Deploying 
