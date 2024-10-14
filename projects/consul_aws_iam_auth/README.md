@@ -18,7 +18,7 @@ When Consul is deploy the configurations with `./post_deploy.sh`
 ## Using the Consul agent
 Currently the consul agent can be used to login. With the `-aws-auto-bearer-token` option the signed request can be created automatically.
 
-Running `./login.sh` will attempt login. 
+Running `./login.sh` will attempt login and create `./token` with the newly created credential.
 
 
 ## Direct to the API
