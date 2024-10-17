@@ -1,7 +1,8 @@
 resource "consul_acl_auth_method" "iam_auth" {
-  name        = "iam_auth"
-  type        = "aws-iam"
-  description = "IAM Auth Method"
+  name          = "iam_auth"
+  type          = "aws-iam"
+  description   = "IAM Auth Method"
+  max_token_ttl = "3m"
 
   config_json = jsonencode({
     BoundIAMPrincipalARNs  = var.iam_entities
@@ -19,9 +20,9 @@ resource "consul_acl_auth_method" "iam_auth" {
 resource "consul_acl_binding_rule" "admin" {
   auth_method = consul_acl_auth_method.iam_auth.name
   description = "Admin Login"
-  #selector    = "entity_name==\"<full_role_name>\""
   selector    = "entity_name matches \"admin\"" # Matches a substring
   #selector    = "account_id==\"<account_id>\""
+  #selector    = "entity_name==\"<full_role_name>\""
   bind_type   = "role"
   bind_name   = "admin"
 }
