@@ -20,7 +20,8 @@ resource "consul_acl_auth_method" "iam_auth" {
 resource "consul_acl_binding_rule" "admin" {
   auth_method = consul_acl_auth_method.iam_auth.name
   description = "Admin Login"
-  selector    = "entity_name matches \"admin\"" # Matches a substring
+  #selector    = "entity_name matches \"admin\"" # Matches a substring
+  selector    = "entity_name matches \"-admin\" and account_id==\"<account_id>\""  
   #selector    = "account_id==\"<account_id>\""
   #selector    = "entity_name==\"<full_role_name>\""
   bind_type   = "role"
@@ -55,8 +56,9 @@ resource "consul_acl_role" "admin" {
 resource "consul_acl_binding_rule" "developer" {
   auth_method = consul_acl_auth_method.iam_auth.name
   description = "Bind test"
-  #selector    = "entity_name==\"<role>\""
-  selector    = "entity_name matches \"developer\""
+  #selector    = "entity_name matches \"developer\""  
+  #selector    = "entity_name==\"aws_nwales_test-developer\""
+  selector    = "entity_name matches \"-developer\" and account_id==\"<account_id>\""   
   #selector    = "account_id==\"<account_id>\""
   bind_type   = "role"
   bind_name   = "developer"
