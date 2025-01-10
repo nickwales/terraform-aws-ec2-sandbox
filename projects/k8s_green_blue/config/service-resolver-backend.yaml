@@ -1,0 +1,11 @@
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceResolver
+metadata:
+  name: backend
+spec:
+  defaultSubset: blue
+  subsets:
+    blue:
+      filter: 'Service.Meta.side == blue'
+    green:
+      filter: 'Service.Meta.side == green'

@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 9090
+      targetPort: 9090
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name: backend
+spec:
+  destination:
+    name: backend
+  sources:
+  - name: middleware
+    action: allow
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-green
+  # labels:
+  #   app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+      version: green
+  template:
+    metadata:
+      annotations:
+        consul.hashicorp.com/service-meta-side: green 
+        consul.hashicorp.com/service-tags: green            
+      labels:
+        app: backend
+        version: green
+    spec:
+      serviceAccountName: backend    
+      containers:
+        - name: backend
+          image: nicholasjackson/fake-service:v0.26.2
+          ports:
+            - containerPort: 9090
+          env:
+            - name: 'NAME'
+              value: 'backend-green'
+            - name: 'MESSAGE'
+              value: 'I am the green backend!'
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-blue
+  # labels:
+  #   app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+      version: blue
+  template:
+    metadata:
+      annotations:
+        consul.hashicorp.com/service-meta-side: blue 
+        consul.hashicorp.com/service-tags: blue        
+      labels:
+        app: backend
+        version: blue
+    spec:
+      serviceAccountName: backend    
+      containers:
+        - name: backend
+          image: nicholasjackson/fake-service:v0.26.2
+          ports:
+            - containerPort: 9090
+          env:
+            - name: 'NAME'
+              value: 'backend-blue'
+            - name: 'MESSAGE'
+              value: 'I am the blue backend!'
+

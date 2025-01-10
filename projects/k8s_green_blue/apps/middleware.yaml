@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: middleware
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: middleware
+spec:
+  selector:
+    app: middleware
+  ports:
+    - port: 9090
+      targetPort: 9090
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name: middleware
+spec:
+  destination:
+    name: middleware
+  sources:
+  - name: ingress-gateway
+    action: allow
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: middleware-green
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: middleware
+      version: green
+  template:
+    metadata:
+      annotations:
+        consul.hashicorp.com/service-meta-side: green 
+        consul.hashicorp.com/service-tags: green          
+      labels:
+        app: middleware
+        version: green
+    spec:
+      serviceAccountName: middleware    
+      containers:
+        - name: middleware
+          image: nicholasjackson/fake-service:v0.26.2
+          ports:
+            - containerPort: 9090
+          env:
+            - name: 'NAME'
+              value: 'middleware-green'
+            - name: 'MESSAGE'
+              value: 'I am the green middleware!'
+            - name: 'UPSTREAM_URIS'
+              value: 'http://backend.virtual.consul'                          
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: middleware-blue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: middleware
+      version: blue
+  template:
+    metadata:
+      annotations:
+        consul.hashicorp.com/service-meta-side: blue 
+        consul.hashicorp.com/service-tags: blue       
+      labels:
+        app: middleware
+        version: blue
+    spec:
+      serviceAccountName: middleware    
+      containers:
+        - name: middleware
+          image: nicholasjackson/fake-service:v0.26.2
+          ports:
+            - containerPort: 9090
+          env:
+            - name: 'NAME'
+              value: 'middleware-blue'
+            - name: 'MESSAGE'
+              value: 'I am the blue middleware!'
+            - name: 'UPSTREAM_URIS'
+              value: 'http://backend.virtual.consul'              
+

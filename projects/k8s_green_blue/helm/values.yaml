@@ -1,0 +1,64 @@
+global:
+  name: consul
+  datacenter: dc2
+  gossipEncryption:
+    autoGenerate: true
+  metrics:
+   enabled: true
+   enableAgentMetrics: true
+   agentMetricsRetentionTime: "1m"    
+  tls:
+    enabled: true
+    httpsOnly: false
+    verify: false
+    enableAutoEncrypt: true
+    serverAdditionalDNSSANs: ["*.elb.us-east-1.amazonaws.com"]
+    caCert:
+      secretName: consul-agent-ca
+      secretKey: tls.crt
+    caKey:
+      secretName: consul-agent-ca-key
+      secretKey: tls.key    
+  acls:
+    manageSystemACLs: true
+    createReplicationToken: true
+  connectInject:
+  enabled: true
+server:
+  replicas: 3
+  exposeGossipAndRPCPorts: true
+ui:
+  enabled: true
+  service:
+    enabled: true
+    type: LoadBalancer
+  metrics:
+    enabled: true
+    provider: "prometheus"
+    baseURL: http://prometheus-server.default.svc.cluster.local    
+  
+dns:
+  enabled: true
+
+connectInject:
+  enabled: true
+  default: true
+  cni:
+    enabled: true
+  metrics:
+    defaultEnabled: true
+    defaultEnableMerging: false
+    defaultPrometheusScrapePort: 20200
+    defaultPrometheusScrapePath: /metrics
+
+ingressGateways:
+  enabled: true
+  defaults:
+    service:
+      type: LoadBalancer
+
+meshGateway:
+  enabled: true
+
+terminatingGateways:
+  enabled: true

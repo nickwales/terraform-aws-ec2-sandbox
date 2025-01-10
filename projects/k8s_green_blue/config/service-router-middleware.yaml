@@ -1,0 +1,38 @@
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceRouter
+metadata:
+  name: middleware
+spec:
+  routes:
+    - match:
+        http:
+          header:
+            - name: x-green
+              exact: 'true'
+      destination:
+        service: middleware
+        serviceSubset: green
+    - match:
+        http:
+          header:
+            - name: x-blue
+              exact: 'true'
+      destination:
+        service: middleware
+        serviceSubset: blue        
+    - match:
+        http:
+          queryParam:
+            - name: x-green
+              exact: 'true'
+      destination:
+        service: middleware
+        serviceSubset: green
+    - match:
+        http:
+          header:
+            - name: x-side
+              exact: 'blue'
+      destination:
+        service: middleware
+        serviceSubset: blue          
