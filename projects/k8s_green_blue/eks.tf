@@ -13,6 +13,6 @@ module "eks_cluster_primary" {
 
     create_kms_key = true
 
-    aws_caller_identity = "arn:aws:iam::068591307351:role/aws_nwales_test-developer"
+    aws_caller_identity = var.aws_caller_identity
     
 }

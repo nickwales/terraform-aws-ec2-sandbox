@@ -30,3 +30,4 @@ variable "consul_binary" {
   default = "consul"
 }
 
+variable "aws_caller_identity" {}
