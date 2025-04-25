@@ -29,3 +29,4 @@ variable "consul_license" {
 variable "consul_binary" {
   default = "consul"
 }
+

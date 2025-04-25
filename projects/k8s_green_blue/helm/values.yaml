@@ -1,6 +1,6 @@
 global:
   name: consul
-  datacenter: dc2
+  datacenter: dc1
   gossipEncryption:
     autoGenerate: true
   metrics:
@@ -30,8 +30,8 @@ server:
 ui:
   enabled: true
   service:
-    enabled: true
-    type: LoadBalancer
+    enabled: false
+    # type: LoadBalancer
   metrics:
     enabled: true
     provider: "prometheus"
@@ -51,14 +51,14 @@ connectInject:
     defaultPrometheusScrapePort: 20200
     defaultPrometheusScrapePath: /metrics
 
-ingressGateways:
-  enabled: true
-  defaults:
-    service:
-      type: LoadBalancer
+# ingressGateways:
+#   enabled: true
+#   defaults:
+#     service:
+#       type: LoadBalancer
 
-meshGateway:
-  enabled: true
+# meshGateway:
+#   enabled: true
 
-terminatingGateways:
-  enabled: true
+# terminatingGateways:
+#   enabled: true

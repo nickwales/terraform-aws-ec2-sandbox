@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backend-green
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-green
+spec:
+  selector:
+    app: backend-green
+  ports:
+    - port: 9090
+      targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-green
+  labels:
+    app: backend-green
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend-green
+  template:
+    metadata:
+      annotations:
+        # 'consul.hashicorp.com/connect-inject': "true"
+        # "consul.hashicorp.com/kubernetes-service": "backend-blue"    
+      labels:
+        app: backend-green
+    spec:
+      serviceAccountName: backend-green    
+      containers:
+        - name: backend-green
+          image: nicholasjackson/fake-service:v0.26.2
+          ports:
+            - containerPort: 9090
+          env:
+            - name: 'NAME'
+              value: 'backend-green'
+            - name: 'MESSAGE'
+              value: 'I am the green backend!'
+            # - name: ERROR_RATE
+            #   value: '0.2'
+            # - name: TIMING_VARIANCE
+            #   value: '0.3'
+            # - name: TIMING_90_PERCENTILE
+            #   value: '0.01s'              
+            # - name: TIMING_99_PERCENTILE
+            #   value: '2s'
+            # - name: UPSTREAM_REQUEST_VARIANCE
+            #   value: "20"
+
+# ---
+# apiVersion: consul.hashicorp.com/v1alpha1
+# kind: ServiceIntentions
+# metadata:
+#   name: backend-green
+# spec:
+#   destination:
+#     name: backend-green
+#   sources:
+#   - name: frontend
+#     action: allow
+
+# ---
+# apiVersion: consul.hashicorp.com/v1alpha1
+# kind: ServiceDefaults
+# metadata:
+#   name: backend-green
+# spec:
+#   protocol: http
+#   upstreamConfig:
+#     defaults:
+#       connectTimeoutMs: 5000
+#       limits:
+#         maxConnections: 30
+#         maxPendingRequests: 40
+#         maxConcurrentRequests: 50
+#       passiveHealthCheck:
+#         interval: "5s"
+#         maxFailures: 10
+#         enforcingConsecutive5xx: 100
+#         maxEjectionPercent: 100

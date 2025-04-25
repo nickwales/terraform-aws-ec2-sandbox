@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flaky-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flaky-service
+spec:
+  selector:
+    app: flaky-service
+  ports:
+    - port: 9090
+      targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flaky-service
+  labels:
+    app: flaky-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flaky-service
+  template:
+    metadata:
+      labels:
+        app: flaky-service
+    spec:
+      serviceAccountName: flaky-service    
+      containers:
+        - name: flaky-service
+          image: nicholasjackson/fake-service:v0.26.2
+          ports:
+            - containerPort: 9090
+          env:
+            - name: 'NAME'
+              value: 'flaky-service'
+            - name: 'MESSAGE'
+              value: 'I am the flaky-service!'
+            - name: ERROR_RATE
+              value: '0.2'
+            # - name: TIMING_VARIANCE
+            #   value: '0.3'
+            - name: TIMING_90_PERCENTILE
+              value: '0.01s'              
+            - name: TIMING_99_PERCENTILE
+              value: '2s'
+            # - name: UPSTREAM_REQUEST_VARIANCE
+            #   value: "20"
+
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name: flaky-service
+spec:
+  destination:
+    name: flaky-service
+  sources:
+  - name: middleware
+    action: allow
+
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceDefaults
+metadata:
+  name: flaky-service
+spec:
+  protocol: http
+  upstreamConfig:
+    defaults:
+      connectTimeoutMs: 5000
+      limits:
+        maxConnections: 30
+        maxPendingRequests: 40
+        maxConcurrentRequests: 50
+      passiveHealthCheck:
+        interval: "5s"
+        maxFailures: 10
+        enforcingConsecutive5xx: 100
+        maxEjectionPercent: 100
