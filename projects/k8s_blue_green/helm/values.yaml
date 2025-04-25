@@ -1,0 +1,49 @@
+global:
+  name: consul
+  datacenter: dc1
+  gossipEncryption:
+    autoGenerate: true
+  tls:
+    enabled: true
+    httpsOnly: false
+    verify: false
+    enableAutoEncrypt: true
+    caCert:
+      secretName: consul-agent-ca
+      secretKey: tls.crt
+    caKey:
+      secretName: consul-agent-ca-key
+      secretKey: tls.key    
+  acls:
+    manageSystemACLs: true
+    createReplicationToken: true
+  connectInject:
+  enabled: true
+server:
+  replicas: 1
+  exposeGossipAndRPCPorts: true
+ui:
+  enabled: true
+  service:
+    enabled: true
+    type: LoadBalancer
+syncCatalog:
+  enabled: false
+  toConsul: true
+  toK8S: false
+  addK8SNamespaceSuffix: false
+  ingress:
+    enabled: true
+    loadBalancerIPs: true    
+dns:
+  enabled: true
+  # proxy:
+  #   enabled: true 
+  #   replicas: 1
+connectInject:
+  enabled: true
+  default: true
+  cni:
+    enabled: true
+
+
