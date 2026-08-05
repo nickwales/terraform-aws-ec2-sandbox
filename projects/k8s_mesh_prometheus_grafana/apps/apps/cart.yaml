@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cart
+  namespace: cart
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart
+  namespace: cart
+spec:
+  selector:
+    app: cart
+  ports:
+    - port: 9090
+      targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart
+  namespace: cart
+  labels:
+    app: cart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cart
+  template:
+    metadata:
+      labels:
+        app: cart
+      annotations:
+        consul.hashicorp.com/connect-inject: "true"
+        consul.hashicorp.com/transparent-proxy: "true"
+        consul.hashicorp.com/enable-metrics: "true"
+        consul.hashicorp.com/enable-metrics-merging: "false"
+        consul.hashicorp.com/prometheus-scrape-port: "20200"
+        consul.hashicorp.com/prometheus-scrape-path: "/metrics" 
+    spec:
+      serviceAccountName: cart
+      containers:
+        - name: cart
+          image: nicholasjackson/fake-service:v0.26.2
+          ports:
+            - containerPort: 9090
+          env:
+            - name: 'LISTEN_ADDR'
+              value: '0.0.0.0:9090'
+            - name: 'NAME'
+              value: 'cart'
+            - name: 'MESSAGE'
+              value: 'I am the cart'
+            - name: 'UPSTREAM_URIS'
+              value: 'http://backend.virtual.consul'              
+

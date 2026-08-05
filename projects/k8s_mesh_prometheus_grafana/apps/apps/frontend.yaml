@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: frontend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 9090
+      targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+      annotations:
+        consul.hashicorp.com/connect-inject: "true"
+        consul.hashicorp.com/transparent-proxy: "true"
+        consul.hashicorp.com/enable-metrics: "true"
+        consul.hashicorp.com/enable-metrics-merging: "false"
+        consul.hashicorp.com/prometheus-scrape-port: "20200"
+        consul.hashicorp.com/prometheus-scrape-path: "/metrics"        
+    spec:
+      serviceAccountName: frontend
+      containers:
+        - name: frontend
+          image: nicholasjackson/fake-service:v0.26.2
+          ports:
+            - containerPort: 9090
+          env:
+            - name: 'LISTEN_ADDR'
+              value: '0.0.0.0:9090'
+            - name: 'NAME'
+              value: 'frontend'
+            - name: 'MESSAGE'
+              value: 'I am the frontend'
+            - name: 'UPSTREAM_URIS'
+              value: 'http://api.virtual.consul'
+
+
+
+# ---
+# apiVersion: gateway.networking.k8s.io/v1beta1
+# kind: HTTPRoute
+# metadata:
+#   name: route-root
+#   namespace: default
+# spec:
+#   parentRefs:
+#   - name: consul-api-gateway
+#     namespace: consul
+#   rules:
+#   - matches:
+#     - path:
+#         type: PathPrefix
+#         value: /
+#     backendRefs:
+#     - kind: Service
+#       name: frontend
+#       port: 9090
