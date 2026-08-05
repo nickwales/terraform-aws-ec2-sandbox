@@ -1,0 +1,56 @@
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name: cart
+  namespace: cart
+spec:
+  destination:
+    name: cart
+    namespace: cart
+  sources:
+    - name: frontend
+      namespace: default
+      action: allow
+    - name: search
+      namespace: default
+      action: allow
+
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name: api
+spec:
+  destination:
+    name: api
+  sources:
+    - name: frontend
+      action: allow
+    - name: search
+      action: allow
+
+
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name: frontend
+spec:
+  destination:
+    name: frontend
+  sources:
+    - name: api-gateway
+      action: allow      
+
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name: backend
+spec:
+  destination:
+    name: backend
+  sources:
+    - name: api
+      action: allow         
